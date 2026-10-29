@@ -1,0 +1,9 @@
+{
+  "name": "guionero-studio",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Editor web de guiones Guionero Studio",
+  "scripts": {
+    "check": "node scripts/check-html.js"
+  }
+}
