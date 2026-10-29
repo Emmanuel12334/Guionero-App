@@ -2075,6 +2075,60 @@ $('noteImport').textContent='＋ Importar imagen';$('paneNote').setAttribute('ar
 if(needsIdbHydration){const st=$('saveStatus');if(st)st.textContent='Restaurando dibujos desde almacenamiento extendido…';window.GuioneroStudioBooting=false;loadFullStateFromIndexedDB().then(raw=>{if(!raw){needsIdbHydration=false;loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();if(st)st.textContent='Nuevo proyecto local';toast('No había copia extendida previa; se abrió un proyecto local nuevo.');return;}importStudioState(raw,{notifyCloud:false});needsIdbHydration=false;toast('Dibujos y capas restaurados desde almacenamiento extendido.');}).catch(err=>{if(st)st.textContent='Error al restaurar dibujos';loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();toast('No se pudo restaurar la copia extendida. Comprueba permisos de almacenamiento y recupera una exportación si existe. '+(err?.message||''));});}
 else{loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();persist();window.GuioneroStudioBooting=false;}
 if(window.__guioneroStorageFallback){const st=$('saveStatus');if(st){st.textContent='Solo esta sesión · exporta antes de cerrar';st.title='El navegador bloqueó el almacenamiento persistente. Exporta el proyecto antes de cerrar.';st.classList.add('storage-temporary');}setTimeout(()=>toast('El navegador bloqueó el almacenamiento persistente. Guionero funciona en esta sesión, pero debes exportar el proyecto antes de cerrar.'),650);}
+
+if(/Android/i.test(navigator.userAgent||'')){
+{
+const androidPaintWork=$('paintWorkarea'),androidPaintViewport=$('paintViewport'),androidPaintCanvas=$('paintCanvas');
+if(androidPaintWork&&androidPaintViewport&&androidPaintCanvas){
+ const androidPaintPointers=new Map();let androidPaintGesture=null,androidPaintLocked=false;
+ const androidPaintCenter=points=>{const a=[...points.values()];return{x:a.reduce((v,p)=>v+p.x,0)/a.length,y:a.reduce((v,p)=>v+p.y,0)/a.length};};
+ const androidPaintDistance=points=>{const a=[...points.values()];if(a.length<2)return 1;return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1;};
+ const androidPaintStop=e=>{e.preventDefault();e.stopPropagation();};
+ androidPaintWork.addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='touch'||e.target.closest('#paintLayersPanel'))return;
+  androidPaintPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(androidPaintPointers.size>=2){androidPaintStop(e);androidPaintLocked=true;
+   if(paintDrawing&&paintSnapshot){try{ctx.putImageData(paintSnapshot,0,0);}catch(_){}paintDrawing=false;paintPointerId=null;paintSnapshot=null;paintLineStart=null;lastPoint=null;}
+   paintPanning=false;paintPanStart=null;
+   const c=androidPaintCenter(androidPaintPointers),r=androidPaintViewport.getBoundingClientRect();c.x-=r.left;c.y-=r.top;
+   androidPaintGesture={startDistance:androidPaintDistance(androidPaintPointers),startZoom:paintZoom,worldX:(c.x-paintPan.x)/paintZoom,worldY:(c.y-paintPan.y)/paintZoom};
+  }else if(androidPaintLocked)androidPaintStop(e);
+ },{capture:true,passive:false});
+ androidPaintWork.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='touch'||!androidPaintPointers.has(e.pointerId))return;
+  androidPaintPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(androidPaintGesture&&androidPaintPointers.size>=2){androidPaintStop(e);const c=androidPaintCenter(androidPaintPointers),r=androidPaintViewport.getBoundingClientRect();c.x-=r.left;c.y-=r.top;const z=Math.max(.04,Math.min(2,androidPaintGesture.startZoom*androidPaintDistance(androidPaintPointers)/androidPaintGesture.startDistance));paintZoom=z;paintPan={x:c.x-androidPaintGesture.worldX*z,y:c.y-androidPaintGesture.worldY*z};applyPaintCamera();}
+  else if(androidPaintLocked)androidPaintStop(e);
+ },{capture:true,passive:false});
+ const androidPaintEnd=e=>{if(e.pointerType!=='touch'||!androidPaintPointers.has(e.pointerId))return;const wasLocked=androidPaintLocked;androidPaintPointers.delete(e.pointerId);if(androidPaintPointers.size===0){androidPaintGesture=null;androidPaintLocked=false;if(wasLocked)persist(false);}else if(androidPaintPointers.size<2){androidPaintGesture=null;androidPaintLocked=true;}};
+ androidPaintWork.addEventListener('pointerup',androidPaintEnd,{capture:true});androidPaintWork.addEventListener('pointercancel',androidPaintEnd,{capture:true});
+}
+}
+{
+const androidNodeWrap=wrap,androidNodeWorld=$('noteWorld');
+if(androidNodeWrap&&androidNodeWorld){
+ const androidNodePointers=new Map();let androidNodeGesture=null,androidNodeLocked=false;
+ const androidNodeCenter=points=>{const a=[...points.values()];return{x:a.reduce((v,p)=>v+p.x,0)/a.length,y:a.reduce((v,p)=>v+p.y,0)/a.length};};
+ const androidNodeDistance=points=>{const a=[...points.values()];if(a.length<2)return 1;return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1;};
+ const androidNodeStop=e=>{e.preventDefault();e.stopPropagation();};
+ androidNodeWrap.addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='touch'||e.target.closest('.note-inspector,.node-add-menu'))return;
+  androidNodePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(androidNodePointers.size>=2){androidNodeStop(e);androidNodeLocked=true;androidNodeGesture=null;dragState=null;portDrag=null;edgeDrag=null;pendingPort=null;try{window.removeEventListener('pointermove',onNodeDragMove);}catch(_){}try{window.removeEventListener('pointermove',onPortDragMove);}catch(_){}try{window.removeEventListener('pointermove',onEdgeDragMove);}catch(_){}drawConnections();
+   const c=androidNodeCenter(androidNodePointers),r=androidNodeWrap.getBoundingClientRect();c.x-=r.left;c.y-=r.top;androidNodeGesture={startDistance:androidNodeDistance(androidNodePointers),startZoom:zoom,worldX:(c.x-pan.x)/zoom,worldY:(c.y-pan.y)/zoom};
+  }else if(androidNodeLocked)androidNodeStop(e);
+ },{capture:true,passive:false});
+ androidNodeWrap.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='touch'||!androidNodePointers.has(e.pointerId))return;androidNodePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(androidNodeGesture&&androidNodePointers.size>=2){androidNodeStop(e);const c=androidNodeCenter(androidNodePointers),r=androidNodeWrap.getBoundingClientRect();c.x-=r.left;c.y-=r.top;const z=Math.max(.2,Math.min(2.25,androidNodeGesture.startZoom*androidNodeDistance(androidNodePointers)/androidNodeGesture.startDistance));zoom=z;pan={x:c.x-androidNodeGesture.worldX*z,y:c.y-androidNodeGesture.worldY*z};androidNodeWorld.style.transform='translate('+pan.x+'px, '+pan.y+'px) scale('+zoom+')';}
+  else if(androidNodeLocked)androidNodeStop(e);
+ },{capture:true,passive:false});
+ const androidNodeEnd=e=>{if(e.pointerType!=='touch'||!androidNodePointers.has(e.pointerId))return;const wasLocked=androidNodeLocked;androidNodePointers.delete(e.pointerId);if(androidNodePointers.size===0){androidNodeGesture=null;androidNodeLocked=false;if(wasLocked)persist();}else if(androidNodePointers.size<2){androidNodeGesture=null;androidNodeLocked=true;}};
+ androidNodeWrap.addEventListener('pointerup',androidNodeEnd,{capture:true});androidNodeWrap.addEventListener('pointercancel',androidNodeEnd,{capture:true});
+}
+}
+}
+
 })();
 
 </script>
@@ -2085,7 +2139,7 @@ const $=id=>document.getElementById(id);
 const LOCAL_KEY='guionero_local_v1', STUDIO_KEY='guionero_studio_v1', ACTIVE_KEY='guionero_active_project_id', FALLBACK_KEY='guionero_project_library_fallback_v1';
 const PICKER_VALUE='__search_project_files__';
 const isAndroid=/Android/i.test(navigator.userAgent||'');
-if(isAndroid){document.body.classList.add('android-script-only');$('tabNote')?.setAttribute('hidden','');$('paneNote')?.setAttribute('hidden','');$('tabPaint')?.removeAttribute('hidden');$('panePaint')?.removeAttribute('hidden');}
+if(isAndroid){document.body.classList.add('android-device');$('tabNote')?.removeAttribute('hidden');$('paneNote')?.removeAttribute('hidden');$('tabPaint')?.removeAttribute('hidden');$('panePaint')?.removeAttribute('hidden');}
 const toolbar=$('scriptProjectToolbar'),oldNew=$('newScriptBtn');
 if(toolbar&&oldNew){oldNew.classList.add('project-new-script-main');oldNew.textContent='＋ NUEVO GUIÓN';oldNew.title='Crear un proyecto independiente';toolbar.insertBefore(oldNew,$('projectImportBtn'));oldNew.style.display='';}
 let dirty=false,saveTimer=null,dbPromise=null,libraryCache=[],capturingSnapshot=false,switchingProject=false,libraryReady=Promise.resolve();
@@ -2469,6 +2523,68 @@ function bootstrap(){
 try{bootstrap();}catch(err){console.error('[Guionero startup] Fatal enhancement error',err);window.__guioneroEnhancementStartupError=String(err?.message||err);} 
 const appTextObserver=new MutationObserver(mutations=>{const translateRoots=new Set(),scaleRoots=new Set();for(const m of mutations){if(m.type==='childList'){for(const n of m.addedNodes){if(n.nodeType===1){translateRoots.add(n);scaleRoots.add(n);}else if(n.nodeType===3&&n.parentElement)translateRoots.add(n.parentElement);}}else if(m.type==='characterData'&&m.target.parentElement){translateRoots.add(m.target.parentElement);}else if(m.type==='attributes'&&['title','aria-label','placeholder'].includes(m.attributeName)){translateRoots.add(m.target);}}for(const root of translateRoots)applyTranslationToRoot(root);for(const root of scaleRoots)scaleUiTree(root);});
 appTextObserver.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['title','aria-label','placeholder']});
+})();
+</script>
+
+<style id="guionero-android-touch-update-style">
+body.android-device #projectManagementDock > .android-project-toggle{width:100%;min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--app);color:var(--ink);font-weight:800;text-align:left;touch-action:manipulation}
+body.android-device #projectManagementDock > .android-project-toggle .android-toggle-chevron{color:var(--accent);font-size:16px}
+body.android-device #projectManagementDock > .android-project-content[hidden],body.android-device #noteToolbarContent[hidden]{display:none!important}
+body.android-device #noteToolbarContent{display:flex;flex:1 0 100%;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
+body.android-device #noteToolbarToggle{width:100%;min-height:40px;justify-content:space-between;text-align:left;font-weight:800;touch-action:manipulation}
+body.android-device #noteCanvasWrap{touch-action:none;overscroll-behavior:contain}
+body.android-device #noteWorld{touch-action:none;will-change:transform}
+body.android-device .node-port{touch-action:none}
+body.android-device .node-port::after{content:"";position:absolute;inset:-9px;border-radius:50%}
+body.android-device #paintWorkarea,body.android-device #paintViewport,body.android-device #paintWorld,body.android-device #paintBoard,body.android-device #paintCanvas{touch-action:none;overscroll-behavior:contain}
+body.android-device .android-paint-tools{display:block;margin:8px 0;border:1px solid var(--line);border-radius:9px;background:var(--app);overflow:hidden}
+body.android-device .android-paint-tools>summary{padding:10px;font-weight:800;cursor:pointer;touch-action:manipulation;list-style-position:inside}
+body.android-device .android-paint-tools-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:8px;border-top:1px solid var(--line);align-items:center}
+body.android-device .android-paint-tools-body label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:11px;min-width:0}
+body.android-device .android-paint-tools-body select,body.android-device .android-paint-tools-body input[type=color],body.android-device .android-paint-tools-body input[type=range]{width:100%;max-width:100%;min-width:0;box-sizing:border-box;min-height:36px}
+body.android-device .android-paint-tools-body .android-paint-history{display:flex;gap:6px;grid-column:1/-1}
+body.android-device .android-paint-tools-body .android-paint-history button{flex:1;min-height:40px;touch-action:manipulation}
+@media(max-width:650px){body.android-device .note-toolbar{display:flex;flex-direction:row;align-items:stretch;padding:7px;max-height:36vh;overflow:auto}body.android-device #noteToolbarContent>*{max-width:100%;min-height:40px}body.android-device #paintLayersPanel{flex-basis:150px;width:150px;max-width:42%}body.android-device .android-paint-tools-body{grid-template-columns:minmax(0,1fr)}body.android-device .android-paint-tools-body .android-paint-history{grid-column:1}}
+</style>
+<script id="guionero-android-touch-update-script">
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+if(!/Android/i.test(navigator.userAgent||''))return;
+document.body.classList.add('android-device');
+['tabNote','paneNote','tabPaint','panePaint'].forEach(id=>$(id)?.removeAttribute('hidden'));
+const projectDock=$('projectManagementDock');
+if(projectDock&&!projectDock.querySelector('.android-project-toggle')){
+ const nodes=[...projectDock.childNodes],button=document.createElement('button'),content=document.createElement('div');
+ button.type='button';button.className='android-project-toggle';button.id='androidProjectManagementToggle';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','androidProjectManagementContent');button.innerHTML='<span>＋ Gestión de guiones</span><span class="android-toggle-chevron" aria-hidden="true">⌄</span>';
+ content.className='android-project-content';content.id='androidProjectManagementContent';content.hidden=true;nodes.forEach(n=>content.appendChild(n));projectDock.append(button,content);
+ button.addEventListener('click',()=>{const open=content.hidden;content.hidden=!open;button.setAttribute('aria-expanded',String(open));button.querySelector('.android-toggle-chevron').textContent=open?'⌃':'⌄';});
+}
+const nodeToolbar=document.querySelector('#paneNote .note-toolbar');
+if(nodeToolbar&&!$('noteToolbarToggle')){
+ const children=[...nodeToolbar.childNodes],button=document.createElement('button'),content=document.createElement('div');
+ button.type='button';button.className='outline-button';button.id='noteToolbarToggle';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','noteToolbarContent');button.innerHTML='<span>⚙ Opciones de Node</span><span class="android-toggle-chevron" aria-hidden="true">⌄</span>';
+ content.id='noteToolbarContent';content.className='android-node-toolbar-content';content.hidden=true;children.forEach(n=>content.appendChild(n));nodeToolbar.append(button,content);
+ button.addEventListener('click',()=>{const open=content.hidden;content.hidden=!open;button.setAttribute('aria-expanded',String(open));button.querySelector('.android-toggle-chevron').textContent=open?'⌃':'⌄';});
+}
+const layers=$('paintLayersPanel'),sourceTool=$('paintTool'),sourceColor=$('paintColor'),sourceSize=$('paintSize');
+if(layers&&sourceTool&&sourceColor&&sourceSize&&!$('androidPaintTools')){
+ const details=document.createElement('details');details.id='androidPaintTools';details.className='android-paint-tools';
+ const summary=document.createElement('summary');summary.textContent='Pinceles y acciones';
+ const body=document.createElement('div');body.className='android-paint-tools-body';
+ const toolLabel=document.createElement('label');toolLabel.textContent='Pincel / herramienta';const tool=sourceTool.cloneNode(true);tool.id='androidPaintTool';tool.className='outline-button';toolLabel.appendChild(tool);
+ const colorLabel=document.createElement('label');colorLabel.textContent='Color';const color=sourceColor.cloneNode(true);color.id='androidPaintColor';colorLabel.appendChild(color);
+ const sizeLabel=document.createElement('label');sizeLabel.textContent='Tamaño del pincel';const size=sourceSize.cloneNode(true);size.id='androidPaintSize';sizeLabel.appendChild(size);
+ const history=document.createElement('div');history.className='android-paint-history';
+ const undo=document.createElement('button');undo.type='button';undo.className='outline-button';undo.id='androidPaintUndo';undo.textContent='↶ Deshacer';undo.setAttribute('aria-label','Deshacer trazo');
+ const redo=document.createElement('button');redo.type='button';redo.className='outline-button';redo.id='androidPaintRedo';redo.textContent='↷ Rehacer';redo.setAttribute('aria-label','Rehacer trazo');history.append(undo,redo);
+ body.append(toolLabel,colorLabel,sizeLabel,history);details.append(summary,body);const header=layers.querySelector('header');if(header)header.after(details);else layers.prepend(details);
+ tool.value=sourceTool.value;color.value=sourceColor.value;size.value=sourceSize.value;
+ tool.addEventListener('change',()=>{sourceTool.value=tool.value;sourceTool.dispatchEvent(new Event('change',{bubbles:true}));});
+ color.addEventListener('input',()=>{sourceColor.value=color.value;sourceColor.dispatchEvent(new Event('input',{bubbles:true}));});color.addEventListener('change',()=>{sourceColor.value=color.value;sourceColor.dispatchEvent(new Event('change',{bubbles:true}));});
+ size.addEventListener('input',()=>{sourceSize.value=size.value;sourceSize.dispatchEvent(new Event('input',{bubbles:true}));});size.addEventListener('change',()=>{sourceSize.value=size.value;sourceSize.dispatchEvent(new Event('change',{bubbles:true}));});
+ const syncTools=()=>{tool.value=sourceTool.value;color.value=sourceColor.value;size.value=sourceSize.value;};sourceTool.addEventListener('change',syncTools);sourceColor.addEventListener('change',syncTools);sourceSize.addEventListener('change',syncTools);
+ undo.addEventListener('click',()=>{$('paintUndo')?.click();});redo.addEventListener('click',()=>{$('paintRedo')?.click();});
+}
 })();
 </script>
 
