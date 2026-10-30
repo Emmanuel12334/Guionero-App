@@ -474,21 +474,55 @@ try {
   const desktopPage=await desktop.newPage(),desktopErrors=[];
   desktopPage.on('pageerror',e=>desktopErrors.push(e.message));
   await boot(desktopPage);
+  const currentDesktopSnapshot=await desktopSnapshot(desktopPage);
+
+  // Compare the three desktop workspaces with the exact pre-update main-branch file.
+  baselineDir=mkdtempSync(join(tmpdir(),'guionero-desktop-baseline-'));
+  const baselinePath=join(baselineDir,'index.html');
+  const baselineHtml=execFileSync('git',['show',DESKTOP_BASELINE+':index.html'],{encoding:'utf8'});
+  writeFileSync(baselinePath,baselineHtml);
+  const baselineContext=await browser.newContext({
+    viewport:{width:1365,height:900},
+    userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36',
+    hasTouch:false
+  });
+  const baselinePage=await baselineContext.newPage(),baselineErrors=[];
+  baselinePage.on('pageerror',e=>baselineErrors.push(e.message));
+  await boot(baselinePage,pathToFileURL(baselinePath).href);
+  const baselineDesktopSnapshot=await desktopSnapshot(baselinePage);
+  assert.deepEqual(currentDesktopSnapshot,baselineDesktopSnapshot,'Desktop computed layout must match the previous main release in Script, Notes and Paint');
+  assert.deepEqual(baselineErrors,[],'Baseline desktop runtime errors: '+baselineErrors.join(' | '));
+  pass('Desktop visual-layout regression: identical computed geometry to baseline '+DESKTOP_BASELINE.slice(0,8));
+  await baselineContext.close();
+
   const desktopState=await desktopPage.evaluate(()=>({
     classes:document.body.className,
+    rootClasses:document.documentElement.className,
     projectToggle:!!document.querySelector('#androidProjectManagementToggle'),
     nodeToggle:!!document.querySelector('#noteToolbarToggle'),
     paintTools:!!document.querySelector('#androidPaintTools'),
+    paintControls:!!document.querySelector('#androidPaintControls'),
+    scriptFocus:!!document.querySelector('#androidScriptFocusToggle'),
     width:document.documentElement.clientWidth,
     scrollWidth:document.documentElement.scrollWidth
   }));
   assert.doesNotMatch(desktopState.classes,/android-device/);
-  assert.equal(desktopState.projectToggle,false);
-  assert.equal(desktopState.nodeToggle,false);
-  assert.equal(desktopState.paintTools,false);
+  assert.doesNotMatch(desktopState.rootClasses,/android-touch-capable/);
+  for(const key of ['projectToggle','nodeToggle','paintTools','paintControls','scriptFocus'])assert.equal(desktopState[key],false,'Desktop must not contain Android control: '+key);
   assert.ok(desktopState.scrollWidth<=desktopState.width+2,'Desktop page has horizontal overflow');
+  await desktopPage.locator('#tabPaint').click();
+  const paintTransformBefore=await desktopPage.locator('#paintWorld').evaluate(el=>el.style.transform);
+  await desktopPage.locator('#paintZoomIn').click();
+  assert.notEqual(await desktopPage.locator('#paintWorld').evaluate(el=>el.style.transform),paintTransformBefore,'Desktop mouse zoom must still work');
+  await desktopPage.locator('#paintToolbarToggle').click();
+  assert.ok(await desktopPage.locator('#paintToolbar').evaluate(el=>el.classList.contains('paint-toolbar-collapsed')));
+  await desktopPage.locator('#paintToolbarToggle').click();
+  await desktopPage.locator('#tabScript').click();
+  await desktopPage.locator('#script .script-line').first().click();
+  await desktopPage.keyboard.type('Desktop keyboard regression');
+  assert.match(await desktopPage.locator('#script').innerText(),/Desktop keyboard regression/);
   assert.deepEqual(desktopErrors,[],'Desktop runtime errors: '+desktopErrors.join(' | '));
-  pass('Desktop regression guard: no Android-only controls or runtime errors',JSON.stringify(desktopState));
+  pass('Desktop controls: mouse zoom, toolbar collapse and Script keyboard input',JSON.stringify(desktopState));
   await desktop.close();
 
   console.log(JSON.stringify({result:'PASS',checks:report},null,2));
@@ -497,4 +531,5 @@ try {
   process.exitCode=1;
 } finally {
   await browser.close();
+  if(baselineDir)rmSync(baselineDir,{recursive:true,force:true});
 }
