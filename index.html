@@ -3429,7 +3429,8 @@ body.android-device .android-safe-spacer {
   toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','androidScriptFormatContent');
   content.id='androidScriptFormatContent';content.hidden=true;content.style.display='contents';
   nodes.forEach(node=>content.appendChild(node));
-  scriptToolbar.append(toggle,content);
+  scriptToolbar.append(content);
+  scriptPane.appendChild(toggle);
   safeTap(toggle,()=>{
    const open=!body.classList.contains('android-script-format-open');
    body.classList.toggle('android-script-format-open',open);
