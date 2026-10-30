@@ -2863,5 +2863,675 @@ body.android-device #paintLayersPanel input[type="range"] {
 }
 </style>
 
+<style id="guionero-android-professional-ui">
+/* Android-only controls; desktop selectors and layout remain untouched. */
+body.android-device {
+  --android-visual-height: 100dvh;
+  min-height: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  -webkit-tap-highlight-color: transparent;
+}
+body.android-device .app {
+  height: var(--android-visual-height, 100dvh);
+  min-height: 0;
+}
+body.android-device button,
+body.android-device select,
+body.android-device input[type="color"],
+body.android-device input[type="number"] {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+body.android-device .studio-tabs {
+  position: relative;
+  z-index: 20;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding: 6px 9px;
+  padding-left: max(9px, env(safe-area-inset-left));
+  padding-right: max(9px, env(safe-area-inset-right));
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+body.android-device .studio-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 0 auto;
+  min-width: 88px;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 10px 13px;
+  font-size: 13px;
+  touch-action: manipulation;
+}
+body.android-device .studio-pane {
+  min-height: 0;
+  min-width: 0;
+}
+body.android-device .workspace {
+  min-height: 0;
+  padding: 9px 8px max(20px, env(safe-area-inset-bottom));
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+body.android-device .paper {
+  width: 100%;
+  max-width: none;
+  min-height: max(620px, calc(var(--android-visual-height, 100dvh) - 175px));
+  border-radius: 7px;
+}
+body.android-device .script {
+  min-height: inherit;
+  padding: 28px clamp(18px, 6vw, 42px) 80px;
+}
+body.android-device .script-line {
+  font-size: 16px;
+  line-height: 1.55;
+  scroll-margin-block: 18vh;
+}
+body.android-device .script-line[data-type="CHARACTER"] { width: 74%; }
+body.android-device .script-line[data-type="DIALOGUE"] { width: 91%; }
+body.android-device .script-format-toolbar button,
+body.android-device #scriptProjectToolbar button {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+body.android-device #projectManagementDock.project-management-mobile {
+  max-height: 32dvh;
+  overscroll-behavior: contain;
+}
+body.android-device .note-toolbar {
+  position: relative;
+  z-index: 14;
+  max-height: 22dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 7px 8px;
+  padding-top: max(7px, env(safe-area-inset-top));
+}
+body.android-device .note-toolbar > button,
+body.android-device #noteToolbarContent > button {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+body.android-device #noteCanvasWrap {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+body.android-device .note-world {
+  touch-action: none;
+  will-change: transform;
+}
+body.android-device .note-inspector.open {
+  z-index: 60;
+  box-shadow: 0 0 0 999px rgba(0,0,0,.35);
+  overscroll-behavior: contain;
+}
+body.android-device .note-inspector .inspector-head {
+  min-height: 52px;
+  padding: 7px 12px;
+}
+body.android-device .note-inspector .inspector-head button {
+  min-width: 44px;
+  min-height: 44px;
+}
+body.android-device .note-inspector .inspector-content {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+body.android-device .node-page-editor,
+body.android-device .note-inspector textarea,
+body.android-device .note-inspector [contenteditable="true"] {
+  scroll-margin-block: 18vh;
+  -webkit-user-select: text;
+  user-select: text;
+}
+body.android-device #paintToolbar {
+  position: relative;
+  z-index: 16;
+  flex: 0 0 auto;
+  max-height: 24dvh;
+  overflow: hidden;
+  padding: 6px 7px;
+  overscroll-behavior: contain;
+}
+body.android-device #paintToolbar .paint-toolbar-content {
+  max-height: 22dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  align-items: center;
+}
+body.android-device #paintToolbar .paint-toolbar-content > button,
+body.android-device #paintToolbar .paint-toolbar-content > select {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+body.android-device #paintToolbar .paint-toolbar-content input[type="range"] {
+  min-height: 44px;
+  touch-action: pan-x;
+}
+body.android-device #paintWorkarea,
+body.android-device #paintViewport,
+body.android-device #paintWorld,
+body.android-device #paintBoard,
+body.android-device #paintCanvas {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+body.android-device #paintWorkarea {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--app);
+}
+body.android-device #paintViewport {
+  position: relative;
+  order: 0;
+  flex: 1 1 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+  cursor: default;
+}
+body.android-device #paintBoard {
+  color-scheme: light !important;
+  forced-color-adjust: none;
+  background: #fff !important;
+  background-color: #fff !important;
+  background-image: none !important;
+}
+body.android-device #paintBoard .paint-board-name {
+  color: #667085;
+  background: #ffffffd9;
+}
+body.android-device #paintCanvas,
+body.android-device .paint-raster-layer,
+body.android-device .paint-image-object img {
+  background: transparent !important;
+}
+body.android-device #paintLayersPanel {
+  z-index: 48;
+  box-sizing: border-box;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  transition: transform .18s ease, opacity .18s ease, visibility .18s ease;
+}
+body.android-device #paintWorkarea.android-paint-drawer-open #paintLayersPanel {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0,0);
+}
+body.android-device #paintLayersToggle,
+body.android-device #paintLayersReopen {
+  display: none !important;
+}
+body.android-device #paintLayersPanel .paint-layer-actions {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 6px;
+}
+body.android-device #paintLayersPanel .paint-layer-actions button,
+body.android-device #paintLayersPanel .paint-object-actions button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 7px 4px;
+  touch-action: manipulation;
+}
+body.android-device #paintLayersPanel .paint-layer-row {
+  min-height: 42px;
+}
+body.android-device #paintLayersPanel .paint-layer-row button {
+  min-width: 40px;
+  min-height: 40px;
+}
+body.android-device #paintLayersPanel .android-paint-tools > summary {
+  min-height: 46px;
+  padding: 12px;
+  touch-action: manipulation;
+}
+body.android-device #androidPaintControls {
+  position: absolute;
+  z-index: 42;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: calc(100% - 16px);
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  box-shadow: 0 5px 22px rgba(0,0,0,.18);
+  color: var(--ink);
+  backdrop-filter: blur(12px);
+}
+body.android-device #androidPaintControls button {
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--ink);
+  font: 750 12px/1 system-ui,sans-serif;
+  touch-action: manipulation;
+}
+body.android-device #androidPaintZoomValue {
+  min-width: 48px;
+  padding: 0 3px;
+  text-align: center;
+  color: var(--ink);
+  font: 750 11px/1 system-ui,sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+body.android-device #androidPaintLayersToggle {
+  min-width: 54px;
+}
+body.android-device #paintLayersPanel .android-paint-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: -2px -2px 8px;
+  padding: 2px 2px 8px;
+  border-bottom: 1px solid var(--line);
+}
+body.android-device #androidPaintLayersClose {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--ink);
+  touch-action: manipulation;
+}
+body.android-device #androidScriptFocusToggle,
+body.android-device #androidScriptFormatToggle {
+  position: fixed;
+  z-index: 90;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 6px 25px rgba(0,0,0,.17);
+  font: 800 12px system-ui,sans-serif;
+  touch-action: manipulation;
+}
+body.android-device #androidScriptFocusToggle {
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 6px);
+}
+body.android-device #androidScriptFormatToggle {
+  display: none;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+}
+body.android-device #androidScriptFormatContent[hidden] {
+  display: none !important;
+}
+body.android-device.android-script-focus .topbar,
+body.android-device.android-script-focus .studio-tabs,
+body.android-device.android-script-focus .workspace-head,
+body.android-device.android-script-focus #projectManagementDock,
+body.android-device.android-script-focus #viewerReconnectNotice,
+body.android-device.android-script-focus #scriptFormatToolbar,
+body.android-device.android-script-focus .editor-help,
+body.android-device.android-script-focus #scriptReferences {
+  display: none !important;
+}
+body.android-device.android-script-focus #androidScriptFormatToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+body.android-device.android-script-focus .main {
+  min-height: 0;
+  min-width: 0;
+}
+body.android-device.android-script-focus #paneScript {
+  min-height: 0;
+  overflow: hidden;
+}
+body.android-device.android-script-focus #workspace {
+  width: 100%;
+  height: var(--android-visual-height, 100dvh);
+  min-height: 0;
+  flex: 1 1 0;
+  overflow: auto;
+  padding: 6px 5px max(72px, calc(env(safe-area-inset-bottom) + 58px));
+  overscroll-behavior: contain;
+}
+body.android-device.android-script-focus .paper {
+  min-height: calc(var(--android-visual-height, 100dvh) - 18px);
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+body.android-device.android-script-focus .script {
+  min-height: calc(var(--android-visual-height, 100dvh) - 18px);
+  padding: 18px clamp(18px, 5vw, 40px) 100px;
+}
+body.android-device.android-script-format-open #scriptFormatToolbar {
+  position: fixed;
+  z-index: 95;
+  display: flex !important;
+  top: calc(max(58px, env(safe-area-inset-top) + 52px));
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  max-height: min(42dvh, 340px);
+  overflow: auto;
+  margin: 0;
+  box-shadow: 0 12px 40px rgba(0,0,0,.24);
+  overscroll-behavior: contain;
+}
+body.android-device.android-script-focus.android-script-format-open #androidScriptFocusToggle {
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 6px);
+}
+body.android-device.android-script-focus.android-keyboard-script #workspace {
+  height: var(--android-visual-height, 100dvh);
+  padding-bottom: 10px;
+}
+body.android-device.android-keyboard-open .studio-tabs {
+  flex: 0 0 auto;
+}
+body.android-device.android-keyboard-script .topbar,
+body.android-device.android-keyboard-script .workspace-head,
+body.android-device.android-keyboard-script #projectManagementDock,
+body.android-device.android-keyboard-script #scriptFormatToolbar,
+body.android-device.android-keyboard-script .editor-help {
+  display: none !important;
+}
+body.android-device.android-keyboard-script #workspace {
+  padding-top: 4px;
+  padding-bottom: 8px;
+}
+body.android-device.android-keyboard-script .script {
+  padding-top: 12px;
+  padding-bottom: 28px;
+}
+body.android-device.android-keyboard-open.android-script-focus #androidScriptFocusToggle {
+  top: max(8px, env(safe-area-inset-top));
+  bottom: auto;
+}
+body.android-device .android-safe-spacer {
+  height: env(safe-area-inset-bottom);
+  flex: 0 0 auto;
+}
+@media (max-width: 650px) and (orientation: portrait) {
+  body.android-device #paintLayersPanel {
+    position: absolute !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: min(68dvh, 590px) !important;
+    min-height: 0 !important;
+    padding: 10px !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 15px !important;
+    background: var(--panel) !important;
+    box-shadow: 0 12px 46px rgba(0,0,0,.34) !important;
+    transform: translateY(calc(100% + 28px));
+  }
+  body.android-device #paintLayersPanel .android-paint-tools-body {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  body.android-device #paintLayersPanel .android-paint-tools-body .android-paint-history {
+    grid-column: 1 / -1;
+  }
+  body.android-device .note-inspector.open {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(72dvh, 650px);
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: 15px 15px 0 0;
+    background: var(--panel);
+  }
+  body.android-device .note-inspector .inspector-content {
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 650px) and (orientation: landscape) {
+  body.android-device #paintLayersPanel {
+    position: absolute !important;
+    left: 8px !important;
+    right: auto !important;
+    top: max(8px, env(safe-area-inset-top)) !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    width: min(290px, 48vw) !important;
+    max-width: 48vw !important;
+    max-height: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 9px !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px !important;
+    background: var(--panel) !important;
+    box-shadow: 0 12px 46px rgba(0,0,0,.34) !important;
+    transform: translateX(calc(-100% - 20px));
+  }
+  body.android-device .note-inspector.open {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: min(54%, 420px) !important;
+    max-width: 54% !important;
+    height: 100%;
+  }
+}
+@media (min-width: 651px) {
+  body.android-device #paintLayersPanel {
+    position: absolute !important;
+    left: 10px !important;
+    right: auto !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    width: min(340px, 40vw) !important;
+    max-width: 40vw !important;
+    max-height: none !important;
+    height: auto !important;
+    padding: 12px !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px !important;
+    background: var(--panel) !important;
+    box-shadow: 0 12px 46px rgba(0,0,0,.34) !important;
+    transform: translateX(calc(-100% - 22px));
+  }
+  body.android-device .note-inspector.open {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100%;
+    width: min(420px, 42%) !important;
+    max-width: 42% !important;
+  }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  body.android-device .topbar {
+    min-height: 48px;
+    flex-wrap: nowrap;
+    padding: 4px max(8px, env(safe-area-inset-left));
+    gap: 6px;
+  }
+  body.android-device .doc-title {
+    width: min(28vw, 260px);
+    font-size: 14px;
+  }
+  body.android-device .top-actions {
+    width: auto;
+    flex: 0 0 auto;
+  }
+  body.android-device .top-actions .long-label {
+    display: none !important;
+  }
+  body.android-device .studio-tabs {
+    padding-block: 4px;
+  }
+}
+</style>
+
+<script id="guionero-android-professional-ui">
+(()=>{'use strict';
+ if(!window.__guioneroAndroidTouch)return;
+ const $=id=>document.getElementById(id);
+ const body=document.body,root=document.documentElement;
+ const safeTap=(button,fn)=>{button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();fn(e);});};
+ const showToast=message=>{const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('show');clearTimeout(toast._androidTimer);toast._androidTimer=setTimeout(()=>toast.classList.remove('show'),2400);};
+
+ // Script focus mode and a compact formatting popover; all original controls are moved, not cloned.
+ const scriptPane=$('paneScript'),scriptToolbar=$('scriptFormatToolbar');
+ if(scriptPane&&!$('androidScriptFocusToggle')){
+  const focus=document.createElement('button');
+  focus.type='button';focus.id='androidScriptFocusToggle';focus.textContent='⛶ Enfocar';focus.setAttribute('aria-pressed','false');
+  focus.setAttribute('aria-label','Ampliar espacio de escritura');
+  focus.addEventListener('click',()=>{
+   const focused=body.classList.toggle('android-script-focus');
+   body.classList.remove('android-script-format-open');
+   focus.textContent=focused?'Salir del enfoque':'⛶ Enfocar';
+   focus.setAttribute('aria-pressed',String(focused));
+   const format=$('androidScriptFormatToggle');
+   if(format)format.setAttribute('aria-expanded','false');
+   requestAnimationFrame(()=>{$('script')?.focus({preventScroll:true});});
+  });
+  scriptPane.appendChild(focus);
+ }
+ if(scriptToolbar&&!$('androidScriptFormatToggle')){
+  const toggle=document.createElement('button'),content=document.createElement('div');
+  const nodes=[...scriptToolbar.childNodes];
+  toggle.type='button';toggle.id='androidScriptFormatToggle';toggle.textContent='Aa Formato';
+  toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','androidScriptFormatContent');
+  content.id='androidScriptFormatContent';content.hidden=true;content.style.display='contents';
+  nodes.forEach(node=>content.appendChild(node));
+  scriptToolbar.append(toggle,content);
+  safeTap(toggle,()=>{
+   const open=!body.classList.contains('android-script-format-open');
+   body.classList.toggle('android-script-format-open',open);
+   content.hidden=!open;toggle.setAttribute('aria-expanded',String(open));
+  });
+ }
+ // Paint quick controls operate the existing zoom and Fit functions.
+ const paintViewport=$('paintViewport'),paintWork=$('paintWorkarea'),paintLayers=$('paintLayersPanel');
+ if(paintViewport&&paintWork&&!$('androidPaintControls')){
+  const controls=document.createElement('div');controls.id='androidPaintControls';controls.setAttribute('role','toolbar');controls.setAttribute('aria-label','Controles táctiles de Paint');
+  const layers=document.createElement('button');layers.id='androidPaintLayersToggle';layers.type='button';layers.textContent='☷ Capas';layers.setAttribute('aria-expanded','false');
+  const out=document.createElement('button');out.type='button';out.id='androidPaintZoomOut';out.textContent='−';out.title='Alejar lienzo';out.setAttribute('aria-label','Alejar lienzo');
+  const value=document.createElement('span');value.id='androidPaintZoomValue';value.textContent='38%';value.setAttribute('aria-live','polite');
+  const inc=document.createElement('button');inc.type='button';inc.id='androidPaintZoomIn';inc.textContent='＋';inc.title='Acercar lienzo';inc.setAttribute('aria-label','Acercar lienzo');
+  const fit=document.createElement('button');fit.type='button';fit.id='androidPaintFit';fit.textContent='Ajustar';fit.title='Ajustar todo el lienzo a la pantalla';
+  const reset=document.createElement('button');reset.type='button';reset.id='androidPaintReset';reset.textContent='100%';reset.title='Restablecer zoom al 100%';
+  controls.append(layers,out,value,inc,fit,reset);paintViewport.appendChild(controls);
+  const drawerTitle=paintLayers?.querySelector('header');
+  if(drawerTitle&&!$('androidPaintLayersClose')){
+   drawerTitle.classList.add('android-paint-drawer-head');
+   const close=document.createElement('button');close.id='androidPaintLayersClose';close.type='button';close.textContent='Cerrar';close.setAttribute('aria-label','Cerrar panel de capas');
+   drawerTitle.appendChild(close);
+   safeTap(close,()=>setLayersOpen(false));
+  }
+  function setLayersOpen(open){
+   paintWork.classList.toggle('android-paint-drawer-open',open);
+   paintLayers?.setAttribute('aria-hidden',String(!open));
+   layers.setAttribute('aria-expanded',String(open));
+   if(!open){layers.focus({preventScroll:true});}
+  }
+  safeTap(layers,()=>setLayersOpen(!paintWork.classList.contains('android-paint-drawer-open')));
+  document.addEventListener('pointerdown',e=>{
+   if(!paintWork.classList.contains('android-paint-drawer-open'))return;
+   if(!paintLayers?.contains(e.target)&&!controls.contains(e.target))setLayersOpen(false);
+  });
+  safeTap(out,()=>window.__guioneroAndroidPaintBridge?.zoomBy(-.12));
+  safeTap(inc,()=>window.__guioneroAndroidPaintBridge?.zoomBy(.12));
+  safeTap(fit,()=>window.__guioneroAndroidPaintBridge?.fit());
+  safeTap(reset,()=>window.__guioneroAndroidPaintBridge?.reset());
+  const updateZoom=()=>{
+   const zoom=window.__guioneroAndroidPaintBridge?.getZoom?.();
+   if(Number.isFinite(zoom))value.textContent=Math.round(zoom*100)+'%';
+  };
+  if(paintViewport&&'MutationObserver'in window){
+   const observer=new MutationObserver(updateZoom);
+   observer.observe($('paintWorld'),{attributes:true,attributeFilter:['style']});
+  }
+  updateZoom();
+  window.addEventListener('resize',updateZoom,{passive:true});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&paintWork.classList.contains('android-paint-drawer-open'))setLayersOpen(false);});
+  // Keep the board background white while preserving transparent raster-layer pixels.
+  const board=$('paintBoard');
+  if(board){board.style.backgroundColor='#fff';board.style.backgroundImage='none';}
+ }
+ // Hide all project-management and Node panels behind their existing touch toggles when appropriate.
+ // The project library and Node toolbar retain every original button and listener.
+ const noteToolbar=$('paneNote')?.querySelector('.note-toolbar');
+ const noteToggle=$('noteToolbarToggle');
+ if(noteToggle)noteToggle.setAttribute('aria-label','Mostrar u ocultar las opciones de Node');
+ const inspector=$('noteInspector');
+ if(inspector){
+  inspector.setAttribute('aria-label','Panel de edición y propiedades del nodo');
+  const close=$('inspectorClose');
+  if(close){close.setAttribute('aria-label','Cerrar panel de propiedades');close.style.minWidth='44px';}
+ }
+ // Resize the working viewport when the Android browser keyboard opens/closes; no editor DOM rewrite.
+ const visual=window.visualViewport;
+ const syncViewport=()=>{
+  const height=visual?.height||window.innerHeight;
+  root.style.setProperty('--android-visual-height',Math.max(240,height)+'px');
+  const keyboardOpen=!!visual&&window.innerHeight-visual.height>115;
+  body.classList.toggle('android-keyboard-open',keyboardOpen);
+  const active=document.activeElement;
+  const isEditor=!!(active&&(
+   active.closest?.('#script,[contenteditable="true"],textarea')||
+   active.id==='script'||active.classList?.contains('node-page-editor')
+  ));
+  body.classList.toggle('android-keyboard-script',keyboardOpen&&isEditor);
+  if(keyboardOpen&&isEditor){
+   requestAnimationFrame(()=>{
+    const target=active?.closest?.('.script-line,.node-page-editor,textarea')||active;
+    target?.scrollIntoView?.({block:'nearest',inline:'nearest'});
+   });
+  }
+ };
+ visual?.addEventListener('resize',syncViewport,{passive:true});
+ visual?.addEventListener('scroll',syncViewport,{passive:true});
+ window.addEventListener('resize',syncViewport,{passive:true});
+ document.addEventListener('focusin',e=>{
+  if(e.target?.matches?.('#script,.node-page-editor,[contenteditable="true"],textarea'))syncViewport();
+ });
+ document.addEventListener('focusout',()=>setTimeout(syncViewport,100));
+ document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&body.classList.contains('android-script-format-open')){
+   body.classList.remove('android-script-format-open');
+   $('androidScriptFormatContent').hidden=true;
+   $('androidScriptFormatToggle')?.setAttribute('aria-expanded','false');
+  }
+ });
+ syncViewport();
+})();
+</script>
+
 </body>
 </html>
