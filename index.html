@@ -2622,7 +2622,7 @@ if(layers&&sourceTool&&sourceColor&&sourceSize&&!$('androidPaintTools')){
  const history=document.createElement('div');history.className='android-paint-history';
  const undo=document.createElement('button');undo.type='button';undo.className='outline-button';undo.id='androidPaintUndo';undo.textContent='↶ Deshacer';undo.setAttribute('aria-label','Deshacer trazo');
  const redo=document.createElement('button');redo.type='button';redo.className='outline-button';redo.id='androidPaintRedo';redo.textContent='↷ Rehacer';redo.setAttribute('aria-label','Rehacer trazo');history.append(undo,redo);
- body.append(toolLabel,colorLabel,sizeLabel,history);details.append(summary,body);const header=layers.querySelector('header');if(header)header.after(details);else layers.prepend(details);
+ body.append(toolLabel,colorLabel,sizeLabel);details.append(summary,body);const header=layers.querySelector('header');if(header){header.after(details);details.after(history);}else{layers.prepend(details);details.after(history);}
  tool.value=sourceTool.value;color.value=sourceColor.value;size.value=sourceSize.value;
  tool.addEventListener('change',()=>{sourceTool.value=tool.value;sourceTool.dispatchEvent(new Event('change',{bubbles:true}));});
  color.addEventListener('input',()=>{sourceColor.value=color.value;sourceColor.dispatchEvent(new Event('input',{bubbles:true}));});color.addEventListener('change',()=>{sourceColor.value=color.value;sourceColor.dispatchEvent(new Event('change',{bubbles:true}));});
@@ -3116,6 +3116,18 @@ body.android-device #paintLayersPanel .paint-layer-row button {
 body.android-device #paintLayersPanel .android-paint-tools > summary {
   min-height: 46px;
   padding: 12px;
+  touch-action: manipulation;
+}
+body.android-device #paintLayersPanel > .android-paint-history {
+  display: flex;
+  gap: 7px;
+  margin: 8px 0 10px;
+  padding: 0;
+}
+body.android-device #paintLayersPanel > .android-paint-history button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
   touch-action: manipulation;
 }
 body.android-device #androidPaintControls {
