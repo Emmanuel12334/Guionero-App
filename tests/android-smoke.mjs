@@ -38,6 +38,40 @@ try {
   page.on('pageerror', e => errors.push(e.message));
   await boot(page);
 
+  const inputProfile=await page.evaluate(()=>({
+    android:!!window.__guioneroAndroidTouch,
+    touch:!!window.__guioneroTouchCapable,
+    platform:String(navigator.userAgentData?.platform||navigator.platform||'')
+  }));
+  assert.equal(inputProfile.android,true,'Android + touch capability must activate the mobile UI');
+  assert.equal(inputProfile.touch,true,'Android emulation must expose touch capability');
+  pass('Android platform and touch-capability detection',JSON.stringify(inputProfile));
+
+  // Script remains the existing contenteditable document, including native selection and clipboard shortcuts.
+  const scriptLine=page.locator('#script .script-line').first();
+  await scriptLine.click();
+  await page.keyboard.type('Texto móvil para comprobar el teclado');
+  assert.match(await page.locator('#script').innerText(),/Texto móvil para comprobar el teclado/);
+  await page.keyboard.press('Control+A');
+  await page.keyboard.press('Control+C');
+  await page.keyboard.press('Control+End');
+  await page.keyboard.press('Control+V');
+  await page.waitForTimeout(120);
+  const pastedText=await page.locator('#script').innerText();
+  assert.ok(pastedText.length>35,'Script copy/paste should retain the selected text');
+  await page.keyboard.press('Control+Z');
+  const undoText=await page.locator('#script').innerText();
+  assert.ok(undoText.length<=pastedText.length,'Script undo should reverse the previous edit');
+  const focusToggle=page.locator('#androidScriptFocusToggle');
+  await focusToggle.tap();
+  assert.ok(await page.locator('body').evaluate(el=>el.classList.contains('android-script-focus')),'Script focus mode did not activate');
+  await page.locator('#androidScriptFormatToggle').tap();
+  assert.ok(await page.locator('body').evaluate(el=>el.classList.contains('android-script-format-open')),'Script format popover did not open');
+  await page.keyboard.press('Escape');
+  await focusToggle.tap();
+  assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('android-script-focus')),false);
+  pass('Script mobile focus mode, format popover, typing, selection, copy/paste and undo');
+
   const shell = await page.evaluate(() => ({
     classes:document.body.className,
     width:document.documentElement.clientWidth,
@@ -124,6 +158,20 @@ try {
 
   await page.locator('#tabPaint').click();
   await page.waitForFunction(()=>document.querySelector('#panePaint').classList.contains('active'));
+  const initialBoard=await page.evaluate(()=>({
+    bg:getComputedStyle(document.querySelector('#paintBoard')).backgroundColor,
+    canvasAlpha:document.querySelector('#paintCanvas').getContext('2d').getImageData(0,0,1,1).data[3]
+  }));
+  assert.equal(initialBoard.bg,'rgb(255, 255, 255)','Paint board must stay white');
+  assert.equal(initialBoard.canvasAlpha,0,'The active paint layer must retain real transparency');
+  await page.locator('#themeBtn').click();
+  assert.equal(await page.locator('body').getAttribute('data-theme'),'dark');
+  assert.equal(await page.locator('#paintBoard').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)','Dark UI theme must not darken the Paint board');
+  await page.locator('#themeBtn').click();
+
+  const layerDrawer=page.locator('#androidPaintLayersToggle');
+  await layerDrawer.tap();
+  assert.ok(await page.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),'Paint layers drawer did not open');
   const tools=page.locator('#androidPaintTools');
   await tools.waitFor({state:'visible',timeout:5000});
   assert.equal(await tools.evaluate(el=>el.open),false);
@@ -148,7 +196,21 @@ try {
   assert.equal(await page.locator('#paintSize').inputValue(),nextSize);
   assert.ok(await page.locator('#androidPaintUndo').isVisible());
   assert.ok(await page.locator('#androidPaintRedo').isVisible());
-  pass('Paint accordion, brush, color, brush size, undo and redo');
+  pass('Paint drawer, brush, color, brush size, undo and redo');
+
+  const zoomLabel=page.locator('#androidPaintZoomValue');
+  const zoomStart=await zoomLabel.innerText();
+  await page.locator('#androidPaintZoomIn').tap();
+  const zoomIn=await zoomLabel.innerText();
+  assert.notEqual(zoomIn,zoomStart,'Android Paint zoom in button did not update the percentage');
+  await page.locator('#androidPaintZoomOut').tap();
+  assert.equal(await zoomLabel.innerText(),zoomStart,'Android Paint zoom out should reverse one zoom step');
+  await page.locator('#androidPaintReset').tap();
+  assert.equal(await zoomLabel.innerText(),'100%','Android Paint reset should restore actual-size zoom');
+  await page.locator('#androidPaintFit').tap();
+  assert.ok(/%$/.test(await zoomLabel.innerText()),'Android Paint Fit should update the zoom readout');
+  await layerDrawer.tap();
+  assert.equal(await page.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),false);
 
   const paintCdp=await mobile.newCDPSession(page);
   async function canvasHash() {
@@ -203,9 +265,12 @@ try {
 
   // Broader phone layout matrix: compact/large portrait and a phone held horizontally.
   const phoneLayouts = [
-    {name:'compact portrait',width:360,height:740,orientation:'portrait'},
-    {name:'large portrait',width:412,height:915,orientation:'portrait'},
-    {name:'landscape phone',width:915,height:412,orientation:'landscape'}
+    {name:'compact portrait',width:360,height:740,orientation:'portrait',kind:'phone'},
+    {name:'medium portrait',width:393,height:852,orientation:'portrait',kind:'phone'},
+    {name:'large portrait',width:412,height:915,orientation:'portrait',kind:'phone'},
+    {name:'landscape phone',width:915,height:412,orientation:'landscape',kind:'phone'},
+    {name:'portrait tablet',width:800,height:1280,orientation:'portrait',kind:'tablet'},
+    {name:'landscape tablet',width:1280,height:800,orientation:'landscape',kind:'tablet'}
   ];
   for (const layout of phoneLayouts) {
     const context=await browser.newContext({
@@ -237,29 +302,33 @@ try {
     await phonePage.locator('#tabPaint').tap();
     await phonePage.waitForFunction(()=>document.querySelector('#panePaint').classList.contains('active'));
     const geometry=await phonePage.evaluate(()=> {
-      const rect=id=>{const r=document.querySelector(id).getBoundingClientRect();return{width:r.width,height:r.height};};
+      const rect=id=>{const r=document.querySelector(id).getBoundingClientRect();return{width:r.width,height:r.height,left:r.left,top:r.top};};
       return {
         direction:getComputedStyle(document.querySelector('#paintWorkarea')).flexDirection,
         work:rect('#paintWorkarea'),
         layers:rect('#paintLayersPanel'),
         viewport:rect('#paintViewport'),
         toolbarToggle:rect('#paintToolbarToggle'),
-        fit:rect('#paintFit'),
-        layersToggle:rect('#paintLayersToggle')
+        fit:rect('#androidPaintFit'),
+        layersToggle:rect('#androidPaintLayersToggle'),
+        zoom:rect('#androidPaintZoomValue')
       };
     });
     assert.ok(geometry.work.width>0&&geometry.work.height>0,layout.name+' Paint workspace is not visible');
     assert.ok(geometry.toolbarToggle.height>=40,layout.name+' Paint toolbar toggle is too small');
-    assert.ok(geometry.fit.height>=40,layout.name+' Paint fit button is too small');
-    assert.ok(geometry.layersToggle.height>=40,layout.name+' Paint layer toggle is too small');
-    if(layout.orientation==='portrait'){
-      assert.equal(geometry.direction,'column','Portrait Paint should stack layers above the canvas');
-      assert.ok(geometry.viewport.width>=geometry.work.width*.94,layout.name+' canvas viewport is too narrow');
-    }else{
-      assert.equal(geometry.direction,'row','Landscape Paint should place layers beside the canvas');
-      assert.ok(geometry.viewport.width>=geometry.work.width*.55,layout.name+' landscape canvas is too narrow');
+    assert.ok(geometry.fit.height>=40,layout.name+' Paint Fit control is too small');
+    assert.ok(geometry.layersToggle.height>=40,layout.name+' Paint layers control is too small');
+    assert.ok(geometry.zoom.height>=18,layout.name+' Paint zoom percentage is too small');
+    assert.ok(geometry.viewport.width>=geometry.work.width*.94,layout.name+' Paint viewport must preserve almost the entire width');
+    const mobileDrawer=phonePage.locator('#androidPaintLayersToggle');
+    await mobileDrawer.tap();
+    assert.ok(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),layout.name+' Paint layer drawer did not open');
+    assert.ok(await phonePage.locator('#paintLayersPanel').isVisible(),layout.name+' Paint layer drawer is not visible');
+    await phonePage.locator('#androidPaintLayersClose').tap();
+    assert.equal(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),false,layout.name+' Paint drawer did not close');
+    if(layout.kind==='phone'&&layout.orientation==='landscape'&&layout.width<1000){
       const menu=phonePage.locator('#mobileMenuBtn');
-      assert.ok(await menu.isVisible(),'Landscape Android menu must remain reachable');
+      assert.ok(await menu.isVisible(),'Landscape phone navigation menu must remain reachable');
       await menu.tap();
       assert.ok(await phonePage.locator('#sidebar').evaluate(el=>el.classList.contains('open')),'Landscape navigation drawer did not open');
       await menu.tap();
@@ -270,11 +339,11 @@ try {
     assert.ok(await phonePage.locator('#paintToolbar').evaluate(el=>el.classList.contains('paint-toolbar-collapsed')),'Paint toolbar did not collapse on touch');
     await toolbarToggle.tap();
     assert.equal(await phonePage.locator('#paintToolbar').evaluate(el=>el.classList.contains('paint-toolbar-collapsed')),false);
-    const layersToggle=phonePage.locator('#paintLayersToggle');
+    const layersToggle=phonePage.locator('#androidPaintLayersToggle');
     await layersToggle.tap();
-    assert.ok(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('paint-layers-collapsed')),'Paint layers panel did not collapse on touch');
-    await phonePage.locator('#paintLayersReopen').tap();
-    assert.equal(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('paint-layers-collapsed')),false);
+    assert.ok(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),'Paint layer drawer did not open on touch');
+    await phonePage.locator('#androidPaintLayersClose').tap();
+    assert.equal(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),false);
     await phonePage.locator('#paintFit').tap();
     assert.deepEqual(phoneErrors,[],layout.name+' runtime errors: '+phoneErrors.join(' | '));
     pass('Android '+layout.name+' responsive layout and Paint controls',JSON.stringify({tabs,geometry}));
