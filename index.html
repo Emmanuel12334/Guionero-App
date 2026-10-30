@@ -3550,10 +3550,20 @@ body.android-device .android-safe-spacer {
  }
  // Resize the working viewport when the Android browser keyboard opens/closes; no editor DOM rewrite.
  const visual=window.visualViewport;
+ let androidViewportBaseHeight=window.innerHeight;
+ let androidViewportBaseWidth=window.innerWidth;
  const syncViewport=()=>{
-  const height=visual?.height||window.innerHeight;
+  const currentWidth=window.innerWidth,currentHeight=window.innerHeight;
+  if(Math.abs(currentWidth-androidViewportBaseWidth)>140){
+   androidViewportBaseWidth=currentWidth;
+   androidViewportBaseHeight=currentHeight;
+  }else if(!body.classList.contains('android-keyboard-open')&&currentHeight>androidViewportBaseHeight){
+   androidViewportBaseHeight=currentHeight;
+  }
+  const height=Math.min(currentHeight,visual?.height||currentHeight);
   root.style.setProperty('--android-visual-height',Math.max(240,height)+'px');
-  const keyboardOpen=!!visual&&window.innerHeight-visual.height>115;
+  const keyboardThreshold=Math.max(145,androidViewportBaseHeight*.18);
+  const keyboardOpen=androidViewportBaseHeight-height>keyboardThreshold;
   body.classList.toggle('android-keyboard-open',keyboardOpen);
   const active=document.activeElement;
   const isEditor=!!(active&&(
