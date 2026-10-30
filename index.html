@@ -3287,8 +3287,9 @@ body.android-device .android-safe-spacer {
     width: auto !important;
     max-width: none !important;
     height: auto !important;
-    max-height: min(68dvh, 590px) !important;
+    max-height: min(68dvh, calc(100% - 16px), 590px) !important;
     min-height: 0 !important;
+    overflow-y: auto !important;
     padding: 10px !important;
     border: 1px solid var(--line) !important;
     border-radius: 15px !important;
@@ -3329,9 +3330,10 @@ body.android-device .android-safe-spacer {
     bottom: max(8px, env(safe-area-inset-bottom)) !important;
     width: min(290px, 48vw) !important;
     max-width: 48vw !important;
-    max-height: none !important;
+    max-height: calc(100% - 16px) !important;
     height: auto !important;
     min-height: 0 !important;
+    overflow-y: auto !important;
     padding: 9px !important;
     border: 1px solid var(--line) !important;
     border-radius: 14px !important;
