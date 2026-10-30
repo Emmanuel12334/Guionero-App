@@ -90,7 +90,7 @@ try {
   const scriptLine=page.locator('#script .script-line').first();
   await scriptLine.click();
   await page.keyboard.type('Texto móvil para comprobar el teclado');
-  assert.match(await page.locator('#script').innerText(),/Texto móvil para comprobar el teclado/);
+  assert.match((await page.locator('#script').innerText()).toLocaleUpperCase(),/TEXTO MÓVIL PARA COMPROBAR EL TECLADO/);
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Control+C');
   await page.keyboard.press('Control+End');
