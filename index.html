@@ -1084,241 +1084,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
     const navItems=blocks.map((b,i)=>b.type==='SCENE'&&b.text.trim()?`<li><a href="chap.xhtml#line-${i+1}">${xhtmlText(b.text.trim())}</a></li>`:'').filter(Boolean).join('\n');
     const safeTitle=escapeHtml(title);
     const chapter=`<?xml version="1.0" encoding="UTF-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="es" lang="es"><head><title>${safeTitle}</title><link rel="stylesheet" type="text/css" href="styles.css"/></head><body><h1 class="book-title">${safeTitle}</h1>${body || '<p></p>'}
-<style id="guionero-android-phone-layout">
-/* Android phone refinement. All selectors stay behind the Android UA class. */
-body.android-device {
-  -webkit-tap-highlight-color: transparent;
-}
-body.android-device button,
-body.android-device select,
-body.android-device input[type="color"],
-body.android-device input[type="number"] {
-  min-height: 44px;
-}
-body.android-device .studio-tabs {
-  gap: 7px;
-  padding: 7px 8px;
-}
-body.android-device .studio-tab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  height: 44px !important;
-  min-height: 44px !important;
-  padding: 10px 14px;
-  touch-action: manipulation;
-}
-body.android-device #scriptFormatToolbar button {
-  min-width: 42px;
-  min-height: 44px;
-  touch-action: manipulation;
-}
-body.android-device #scriptFormatToolbar input[type="color"] {
-  width: 42px;
-  min-height: 42px;
-}
-body.android-device .android-project-toggle,
-body.android-device #noteToolbarToggle,
-body.android-device .android-paint-tools > summary {
-  min-height: 44px;
-}
-body.android-device #paintToolbar {
-  max-height: 31dvh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-body.android-device #paintToolbar .paint-toolbar-content {
-  max-height: inherit;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  align-items: center;
-}
-body.android-device #paintToolbar .paint-toolbar-content > button,
-body.android-device #paintToolbar .paint-toolbar-content > select {
-  min-height: 44px;
-  touch-action: manipulation;
-}
-body.android-device #paintToolbar .paint-toolbar-content input[type="range"] {
-  min-height: 44px;
-  touch-action: pan-x;
-}
-body.android-device #paintLayersPanel .paint-layer-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-body.android-device #paintLayersPanel .paint-layer-actions button,
-body.android-device #paintLayersPanel .paint-object-actions button {
-  min-width: 0;
-  min-height: 42px;
-  padding: 7px 4px;
-  font-size: 11px;
-  touch-action: manipulation;
-}
-body.android-device #paintLayersPanel .paint-layer-row {
-  min-height: 40px;
-}
-body.android-device #paintLayersPanel .paint-layer-row button {
-  min-width: 38px;
-  min-height: 38px;
-  touch-action: manipulation;
-}
-body.android-device #paintLayersPanel input[type="range"] {
-  min-height: 40px;
-  touch-action: pan-x;
-}
-@media (max-width: 650px) and (orientation: portrait) {
-  body.android-device .app {
-    height: 100%;
-    height: 100dvh;
-    min-height: 0;
-  }
-  body.android-device .main {
-    min-width: 0;
-    min-height: 0;
-  }
-  body.android-device #paintToolbar {
-    max-height: 28dvh;
-  }
-  body.android-device #paintToolbar .paint-toolbar-content {
-    max-height: 25dvh;
-  }
-  body.android-device #paintWorkarea {
-    display: flex !important;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-  }
-  body.android-device #paintLayersPanel {
-    position: relative !important;
-    order: 0;
-    flex: 0 1 auto;
-    width: 100%;
-    max-width: none;
-    height: auto;
-    max-height: 31%;
-    min-height: 0;
-    overflow: auto;
-    padding: 7px 9px;
-    border: 0;
-    border-bottom: 1px solid var(--line);
-  }
-  body.android-device #paintLayersPanel .android-paint-tools-body {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  body.android-device #paintLayersPanel .android-paint-tools-body .android-paint-history {
-    grid-column: 1 / -1;
-  }
-  body.android-device #paintViewport {
-    order: 1;
-    flex: 1 1 0;
-    width: 100%;
-    height: auto;
-    min-width: 0;
-    min-height: 180px;
-  }
-  body.android-device #paintLayersReopen {
-    left: auto;
-    right: 8px;
-    top: 8px;
-  }
-}
-@media (max-height: 600px) and (orientation: landscape) {
-  body.android-device .app {
-    min-height: 0;
-  }
-  body.android-device .sidebar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 50;
-    width: min(290px, 82vw);
-    transform: translateX(-100%);
-    transition: transform .2s ease;
-    box-shadow: none;
-  }
-  body.android-device .sidebar.open {
-    transform: translateX(0);
-    box-shadow: 0 0 0 999px rgba(0,0,0,.35);
-  }
-  body.android-device .mobile-menu {
-    display: inline-flex !important;
-  }
-  body.android-device .topbar {
-    min-height: 54px;
-    flex-wrap: nowrap;
-    gap: 7px;
-    padding: 6px 10px;
-  }
-  body.android-device .doc-heading {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  body.android-device .doc-title {
-    width: min(28vw, 260px);
-    font-size: 14px;
-  }
-  body.android-device .top-actions {
-    width: auto;
-    flex: 0 0 auto;
-    gap: 5px;
-  }
-  body.android-device .top-actions .long-label {
-    display: none !important;
-  }
-  body.android-device .top-actions .icon-button,
-  body.android-device .top-actions .outline-button {
-    min-height: 42px;
-    height: 42px;
-  }
-  body.android-device .workspace {
-    padding: 9px 12px 22px;
-  }
-  body.android-device .studio-tabs {
-    padding: 5px 9px;
-  }
-  body.android-device #paintToolbar {
-    max-height: 25dvh;
-  }
-  body.android-device #paintToolbar .paint-toolbar-content {
-    max-height: 22dvh;
-  }
-  body.android-device #paintWorkarea {
-    flex-direction: row;
-    min-height: 0;
-  }
-  body.android-device #paintLayersPanel {
-    position: relative !important;
-    order: 0;
-    flex: 0 0 142px;
-    width: 142px;
-    max-width: 36%;
-    height: 100%;
-    max-height: none;
-    min-height: 0;
-    overflow: auto;
-    border: 0;
-    border-right: 1px solid var(--line);
-    padding: 7px;
-  }
-  body.android-device #paintViewport {
-    order: 1;
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 0;
-    height: 100%;
-  }
-  body.android-device #paintLayersReopen {
-    left: 3px;
-    right: auto;
-    top: 10px;
-  }
-}
-</style>
+
 
 </body></html>`;
     const nav=`<?xml version="1.0" encoding="UTF-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="es" lang="es"><head><title>Contenido</title></head><body><nav epub:type="toc" id="toc"><h1>Escenas</h1><ol>${navItems || '<li><a href="chap.xhtml">Guion completo</a></li>'}</ol></nav></body></html>`;
@@ -2824,6 +2590,242 @@ if(layers&&sourceTool&&sourceColor&&sourceSize&&!$('androidPaintTools')){
 }
 })();
 </script>
+
+<style id="guionero-android-phone-layout">
+/* Android phone refinement. All selectors stay behind the Android UA class. */
+body.android-device {
+  -webkit-tap-highlight-color: transparent;
+}
+body.android-device button,
+body.android-device select,
+body.android-device input[type="color"],
+body.android-device input[type="number"] {
+  min-height: 44px;
+}
+body.android-device .studio-tabs {
+  gap: 7px;
+  padding: 7px 8px;
+}
+body.android-device .studio-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 10px 14px;
+  touch-action: manipulation;
+}
+body.android-device #scriptFormatToolbar button {
+  min-width: 42px;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+body.android-device #scriptFormatToolbar input[type="color"] {
+  width: 42px;
+  min-height: 42px;
+}
+body.android-device .android-project-toggle,
+body.android-device #noteToolbarToggle,
+body.android-device .android-paint-tools > summary {
+  min-height: 44px;
+}
+body.android-device #paintToolbar {
+  max-height: 31dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+body.android-device #paintToolbar .paint-toolbar-content {
+  max-height: inherit;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  align-items: center;
+}
+body.android-device #paintToolbar .paint-toolbar-content > button,
+body.android-device #paintToolbar .paint-toolbar-content > select {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+body.android-device #paintToolbar .paint-toolbar-content input[type="range"] {
+  min-height: 44px;
+  touch-action: pan-x;
+}
+body.android-device #paintLayersPanel .paint-layer-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+body.android-device #paintLayersPanel .paint-layer-actions button,
+body.android-device #paintLayersPanel .paint-object-actions button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 7px 4px;
+  font-size: 11px;
+  touch-action: manipulation;
+}
+body.android-device #paintLayersPanel .paint-layer-row {
+  min-height: 40px;
+}
+body.android-device #paintLayersPanel .paint-layer-row button {
+  min-width: 38px;
+  min-height: 38px;
+  touch-action: manipulation;
+}
+body.android-device #paintLayersPanel input[type="range"] {
+  min-height: 40px;
+  touch-action: pan-x;
+}
+@media (max-width: 650px) and (orientation: portrait) {
+  body.android-device .app {
+    height: 100%;
+    height: 100dvh;
+    min-height: 0;
+  }
+  body.android-device .main {
+    min-width: 0;
+    min-height: 0;
+  }
+  body.android-device #paintToolbar {
+    max-height: 28dvh;
+  }
+  body.android-device #paintToolbar .paint-toolbar-content {
+    max-height: 25dvh;
+  }
+  body.android-device #paintWorkarea {
+    display: flex !important;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  body.android-device #paintLayersPanel {
+    position: relative !important;
+    order: 0;
+    flex: 0 1 auto;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: 31%;
+    min-height: 0;
+    overflow: auto;
+    padding: 7px 9px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  body.android-device #paintLayersPanel .android-paint-tools-body {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  body.android-device #paintLayersPanel .android-paint-tools-body .android-paint-history {
+    grid-column: 1 / -1;
+  }
+  body.android-device #paintViewport {
+    order: 1;
+    flex: 1 1 0;
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    min-height: 180px;
+  }
+  body.android-device #paintLayersReopen {
+    left: auto;
+    right: 8px;
+    top: 8px;
+  }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  body.android-device .app {
+    min-height: 0;
+  }
+  body.android-device .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    width: min(290px, 82vw);
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    box-shadow: none;
+  }
+  body.android-device .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 0 0 0 999px rgba(0,0,0,.35);
+  }
+  body.android-device .mobile-menu {
+    display: inline-flex !important;
+  }
+  body.android-device .topbar {
+    min-height: 54px;
+    flex-wrap: nowrap;
+    gap: 7px;
+    padding: 6px 10px;
+  }
+  body.android-device .doc-heading {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  body.android-device .doc-title {
+    width: min(28vw, 260px);
+    font-size: 14px;
+  }
+  body.android-device .top-actions {
+    width: auto;
+    flex: 0 0 auto;
+    gap: 5px;
+  }
+  body.android-device .top-actions .long-label {
+    display: none !important;
+  }
+  body.android-device .top-actions .icon-button,
+  body.android-device .top-actions .outline-button {
+    min-height: 42px;
+    height: 42px;
+  }
+  body.android-device .workspace {
+    padding: 9px 12px 22px;
+  }
+  body.android-device .studio-tabs {
+    padding: 5px 9px;
+  }
+  body.android-device #paintToolbar {
+    max-height: 25dvh;
+  }
+  body.android-device #paintToolbar .paint-toolbar-content {
+    max-height: 22dvh;
+  }
+  body.android-device #paintWorkarea {
+    flex-direction: row;
+    min-height: 0;
+  }
+  body.android-device #paintLayersPanel {
+    position: relative !important;
+    order: 0;
+    flex: 0 0 142px;
+    width: 142px;
+    max-width: 36%;
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+    overflow: auto;
+    border: 0;
+    border-right: 1px solid var(--line);
+    padding: 7px;
+  }
+  body.android-device #paintViewport {
+    order: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+  }
+  body.android-device #paintLayersReopen {
+    left: 3px;
+    right: auto;
+    top: 10px;
+  }
+}
+</style>
 
 </body>
 </html>
