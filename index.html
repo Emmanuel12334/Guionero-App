@@ -2606,6 +2606,17 @@ body.android-device .studio-tabs {
   gap: 7px;
   padding: 7px 8px;
 }
+/* Internal graph connectors remain compact; the transparent pseudo-element
+   expands their hit area without stretching Node geometry or moving ports. */
+body.android-device .node-port {
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  min-height: 15px !important;
+}
+body.android-device .node-port::after {
+  inset: -12px;
+}
 body.android-device .studio-tab {
   display: inline-flex;
   align-items: center;
