@@ -242,6 +242,8 @@ try {
   assert.ok(await page.locator('#androidPaintUndo').isVisible());
   assert.ok(await page.locator('#androidPaintRedo').isVisible());
   pass('Paint drawer, brush, color, brush size, undo and redo');
+  await page.locator('#androidPaintLayersClose').tap();
+  assert.equal(await page.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),false);
 
   const zoomLabel=page.locator('#androidPaintZoomValue');
   const zoomStart=await zoomLabel.innerText();
@@ -254,8 +256,6 @@ try {
   assert.equal(await zoomLabel.innerText(),'100%','Android Paint reset should restore actual-size zoom');
   await page.locator('#androidPaintFit').tap();
   assert.ok(/%$/.test(await zoomLabel.innerText()),'Android Paint Fit should update the zoom readout');
-  await layerDrawer.tap();
-  assert.equal(await page.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),false);
 
   const paintCdp=await mobile.newCDPSession(page);
   async function canvasHash() {
