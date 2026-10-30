@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 
 const url = pathToFileURL(resolve('index.html')).href;
 const report = [];
 const errors = [];
+const DESKTOP_BASELINE = '46e69883e55768b9afcc637e48fb5327e031d2bd';
+let baselineDir = null;
 const browser = await chromium.launch({ headless: true });
 function pass(name, detail = '') { report.push({name, result:'PASS', detail}); }
 function assertStep(name, fn) {
@@ -22,6 +27,22 @@ async function touch(cdp, type, pts) {
     type,
     touchPoints: pts.map(p => ({id:p.id, x:Math.round(p.x), y:Math.round(p.y), radiusX:3, radiusY:3, force:1}))
   });
+}
+async function desktopSnapshot(page) {
+  const tabs=['#tabScript','#tabNote','#tabPaint'];
+  const selectors=['.sidebar','.topbar','.studio-tabs','.workspace','#paper','#script','#scriptProjectToolbar','#scriptFormatToolbar','.note-toolbar','.note-layout','#noteCanvasWrap','#noteInspector','.paint-toolbar','#paintWorkarea','#paintLayersPanel','#paintViewport','#paintBoard','#paintCanvas'];
+  const snapshots={};
+  for(const tab of tabs){
+    await page.locator(tab).click();
+    const pane=await page.locator(tab).getAttribute('data-pane');
+    await page.waitForFunction(id=>document.getElementById(id)?.classList.contains('active'),pane);
+    snapshots[tab]=await page.evaluate(ids=>Object.fromEntries(ids.map(id=>{
+      const el=document.querySelector(id);if(!el)return[id,null];
+      const r=el.getBoundingClientRect(),s=getComputedStyle(el);
+      return[id,{x:r.x,y:r.y,width:r.width,height:r.height,display:s.display,position:s.position,flex:s.flex,flexDirection:s.flexDirection,overflow:s.overflow,padding:s.padding,margin:s.margin,transform:s.transform,backgroundColor:s.backgroundColor}];
+    })),selectors);
+  }
+  return snapshots;
 }
 async function center(page, selector) {
   return page.locator(selector).evaluate(el => {
