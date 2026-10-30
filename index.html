@@ -2044,6 +2044,23 @@ function applyPaintTextStyleToSelection(){const o=board().objects.find(x=>x.id==
 $('paintTextBtn').onclick=()=>{paintMode='draw';$('paintMode').value='draw';$('paintTool').value='text';capturePaintTools();persist(false);toast('Haz clic en el lienzo para crear texto.');};
 $('paintFontFamily').addEventListener('change',applyPaintTextStyleToSelection);$('paintFontSize').addEventListener('change',applyPaintTextStyleToSelection);$('paintTextColor').addEventListener('change',applyPaintTextStyleToSelection);
 $('paintFit').onclick=()=>{const v=$('paintViewport')||paintWork;const z=Math.min((v.clientWidth-32)/canvas.width,(v.clientHeight-32)/canvas.height);paintZoom=Math.max(.04,Math.min(2,z));paintPan={x:(v.clientWidth-canvas.width*paintZoom)/2,y:(v.clientHeight-canvas.height*paintZoom)/2};applyPaintCamera();persist(false);};
+if(window.__guioneroAndroidTouch){
+ window.__guioneroAndroidPaintBridge={
+  getZoom:()=>paintZoom,
+  zoomBy:delta=>{
+   const v=$('paintViewport')||paintWork,r=v.getBoundingClientRect();
+   setPaintZoom(paintZoom+delta,{x:r.left+r.width/2,y:r.top+r.height/2});
+  },
+  fit:()=>{$('paintFit').click();},
+  reset:()=>{
+   const v=$('paintViewport')||paintWork;
+   paintZoom=1;
+   paintPan={x:(v.clientWidth-canvas.width)/2,y:(v.clientHeight-canvas.height)/2};
+   applyPaintCamera();persist(false);
+  }
+ };
+}
+
 $('paintBoardSelect').onchange=e=>{saveBoard(false);model.activeBoard=e.target.value;selectedPaintObjectId=null;loadBoard();persist();};
 $('paintNew').onclick=()=>{saveBoard(false);const b=newPaintBoard('Lienzo '+(model.boards.length+1));model.boards.push(b);model.activeBoard=b.id;selectedPaintObjectId=null;loadBoard();persist();};
 $('paintRenameBoard').onclick=()=>{const b=board(),v=prompt('Nombre del lienzo',b.name);if(v?.trim()){b.name=v.trim();saveBoard();loadBoard();}};
