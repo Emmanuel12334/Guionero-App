@@ -116,13 +116,14 @@ try {
   assert.ok(await page.locator('#androidPaintRedo').isVisible());
   pass('Paint accordion, brush, color, brush size, undo and redo');
 
+  const paintCdp=await mobile.newCDPSession(page);
   const paintBefore=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
   const vr=await center(page,'#paintViewport');
   const pp1={x:vr.left+Math.min(35,vr.width*.25),y:vr.top+Math.min(70,vr.height*.25)};
-  await touch(cdp,'touchStart',[{id:21,...pp1}]);
-  await touch(cdp,'touchStart',[{id:21,...pp1},{id:22,x:pp1.x+50,y:pp1.y+6}]);
-  await touch(cdp,'touchMove',[{id:21,x:pp1.x-8,y:pp1.y+20},{id:22,x:pp1.x+115,y:pp1.y+20}]);
-  await touch(cdp,'touchEnd',[]);
+  await touch(paintCdp,'touchStart',[{id:21,...pp1}]);
+  await touch(paintCdp,'touchStart',[{id:21,...pp1},{id:22,x:pp1.x+50,y:pp1.y+6}]);
+  await touch(paintCdp,'touchMove',[{id:21,x:pp1.x-8,y:pp1.y+20},{id:22,x:pp1.x+115,y:pp1.y+20}]);
+  await touch(paintCdp,'touchEnd',[]);
   await page.waitForTimeout(220);
   const paintAfterPinch=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
   assert.notEqual(paintAfterPinch,paintBefore,'Paint pinch did not change zoom/pan');
@@ -136,10 +137,10 @@ try {
   const hashBefore=await canvasHash();
   const cr=await center(page,'#paintViewport');
   const pt={x:cr.left+Math.min(35,cr.width*.25),y:cr.top+35};
-  await touch(cdp,'touchStart',[{id:31,...pt}]);
-  await touch(cdp,'touchMove',[{id:31,x:pt.x+40,y:pt.y+30}]);
-  await touch(cdp,'touchMove',[{id:31,x:pt.x+75,y:pt.y+45}]);
-  await touch(cdp,'touchEnd',[]);
+  await touch(paintCdp,'touchStart',[{id:31,...pt}]);
+  await touch(paintCdp,'touchMove',[{id:31,x:pt.x+40,y:pt.y+30}]);
+  await touch(paintCdp,'touchMove',[{id:31,x:pt.x+75,y:pt.y+45}]);
+  await touch(paintCdp,'touchEnd',[]);
   await page.waitForTimeout(400);
   const hashAfter=await canvasHash();
   assert.notEqual(hashAfter,hashBefore,'One-finger touch did not draw on Paint');
