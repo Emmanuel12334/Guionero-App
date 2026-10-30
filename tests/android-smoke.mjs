@@ -109,7 +109,17 @@ try {
   await page.keyboard.press('Escape');
   await focusToggle.tap();
   assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('android-script-focus')),false);
-  pass('Script mobile focus mode, format popover, typing, selection, copy/paste and undo');
+
+  // Emulate the viewport reduction produced by the Android virtual keyboard.
+  await scriptLine.click();
+  await page.setViewportSize({width:393,height:600});
+  await page.waitForFunction(()=>document.body.classList.contains('android-keyboard-open')&&document.body.classList.contains('android-keyboard-script'));
+  const keyboardHeight=await page.locator('html').evaluate(el=>getComputedStyle(el).getPropertyValue('--android-visual-height').trim());
+  assert.equal(keyboardHeight,'600px','Script should follow the visible viewport while the keyboard is open');
+  await page.setViewportSize({width:393,height:852});
+  await page.waitForFunction(()=>!document.body.classList.contains('android-keyboard-open'));
+  pass('Script mobile focus mode, format popover and keyboard viewport adjustment');
+  pass('Script typing, native selection, copy/paste and undo are retained');
 
   const shell = await page.evaluate(() => ({
     classes:document.body.className,
@@ -377,6 +387,22 @@ try {
   assert.notEqual(objectTransformAfter,objectTransformBefore,'Two-finger pinch over an object should still navigate Paint');
   pass('Paint one-finger object movement and two-finger cancellation do not conflict');
   await objectCdp.detach();
+
+  // Reload the existing app and ensure its current project/schema survives the mobile session.
+  const persistedBeforeReload=await page.evaluate(()=>window.GuioneroStudio.exportState());
+  assert.equal(persistedBeforeReload.version,7,'Mobile tools must retain the existing schema version 7');
+  assert.ok(persistedBeforeReload.boards.every(b=>b.backgroundColor==='#ffffff'),'All Paint board backgrounds must remain white');
+  await page.waitForTimeout(1100);
+  await boot(page);
+  await page.waitForTimeout(350);
+  const persistedAfterReload=await page.evaluate(()=>window.GuioneroStudio.exportState());
+  assert.equal(persistedAfterReload.version,7,'Reload must not migrate the project schema');
+  assert.ok(persistedAfterReload.pages.some(p=>(p.blocks||[]).some(b=>String(b.text||'').includes('Texto de Notes desde Android'))),'Notes text must survive reload');
+  const restoredBoard=persistedAfterReload.boards.find(b=>b.id===persistedAfterReload.activeBoard);
+  assert.ok(restoredBoard,'Active Paint board must survive reload');
+  assert.ok(restoredBoard.objects.some(o=>o.id==='android-touch-object-test'),'Paint object must survive reload');
+  assert.ok(persistedAfterReload.images.length>=2,'Node image exports should survive reload');
+  pass('Project persistence after reload: Notes, Paint object, Node exports and schema v7');
 
   assert.deepEqual(errors,[],'Runtime errors: '+errors.join(' | '));
   pass('Android runtime: no uncaught JavaScript errors');
