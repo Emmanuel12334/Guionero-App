@@ -444,13 +444,13 @@ try {
     assert.ok(await phonePage.locator('#paintLayersPanel').isVisible(),layout.name+' Paint layer drawer is not visible');
     await phonePage.locator('#androidPaintLayersClose').tap();
     assert.equal(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-drawer-open')),false,layout.name+' Paint drawer did not close');
-    if(layout.kind==='phone'&&layout.orientation==='landscape'&&layout.width<1000){
+    if((layout.kind==='phone'&&layout.orientation==='landscape'&&layout.width<1000)||layout.kind==='tablet'){
       const menu=phonePage.locator('#mobileMenuBtn');
-      assert.ok(await menu.isVisible(),'Landscape phone navigation menu must remain reachable');
+      assert.ok(await menu.isVisible(),layout.name+' navigation menu must remain reachable');
       await menu.tap();
-      assert.ok(await phonePage.locator('#sidebar').evaluate(el=>el.classList.contains('open')),'Landscape navigation drawer did not open');
+      assert.ok(await phonePage.locator('#sidebar').evaluate(el=>el.classList.contains('open')),layout.name+' navigation drawer did not open');
       await menu.tap();
-      assert.equal(await phonePage.locator('#sidebar').evaluate(el=>el.classList.contains('open')),false);
+      assert.equal(await phonePage.locator('#sidebar').evaluate(el=>el.classList.contains('open')),false,layout.name+' navigation drawer did not close');
     }
     const toolbarToggle=phonePage.locator('#paintToolbarToggle');
     await toolbarToggle.tap();
