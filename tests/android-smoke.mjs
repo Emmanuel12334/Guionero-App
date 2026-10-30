@@ -16,8 +16,8 @@ function pass(name, detail = '') { report.push({name, result:'PASS', detail}); }
 function assertStep(name, fn) {
   try { return fn(); } catch (e) { report.push({name, result:'FAIL', detail:String(e.message || e)}); throw e; }
 }
-async function boot(page) {
-  await page.goto(url, {waitUntil:'domcontentloaded'});
+async function boot(page, target=url) {
+  await page.goto(target, {waitUntil:'domcontentloaded'});
   await page.waitForSelector('#script', {timeout:15000});
   await page.waitForFunction(() => !!window.GuioneroStudio && !!document.querySelector('.studio-tabs'), null, {timeout:15000});
   await page.waitForTimeout(900);
@@ -51,6 +51,24 @@ async function center(page, selector) {
   });
 }
 try {
+  const touchlessAndroid=await browser.newContext({
+    viewport:{width:393,height:852},deviceScaleFactor:1,isMobile:true,hasTouch:false,
+    userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'
+  });
+  const touchlessPage=await touchlessAndroid.newPage();
+  await boot(touchlessPage);
+  const touchless=await touchlessPage.evaluate(()=>({
+    androidTouch:!!window.__guioneroAndroidTouch,
+    touchCapable:!!window.__guioneroTouchCapable,
+    androidClass:document.body.classList.contains('android-device'),
+    paintControls:!!document.querySelector('#androidPaintControls')
+  }));
+  assert.equal(touchless.androidTouch,false,'Android UA without touch capability must not receive phone-only UI');
+  assert.equal(touchless.androidClass,false);
+  assert.equal(touchless.paintControls,false);
+  pass('Android UA without touch capability keeps the desktop UI',JSON.stringify(touchless));
+  await touchlessAndroid.close();
+
   const mobile = await browser.newContext({
     viewport:{width:393,height:852},deviceScaleFactor:2,isMobile:true,hasTouch:true,
     userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'
@@ -133,6 +151,12 @@ try {
   // Create two manual pages and verify that a real touchscreen drag joins compatible ports.
   await nodeToggle.click();
   await page.locator('#noteAddPage').click();
+  const nodePageEditor=page.locator('.node-page-editor').first();
+  await nodePageEditor.waitFor({state:'visible',timeout:5000});
+  await nodePageEditor.fill('Texto de Notes desde Android');
+  await page.waitForTimeout(100);
+  const noteTextSaved=await page.evaluate(()=>window.GuioneroStudio.exportState().pages.some(p=>(p.blocks||[]).some(b=>String(b.text||'').includes('Texto de Notes desde Android'))));
+  assert.equal(noteTextSaved,true,'Notes page editor should save text into the existing Node model');
   await page.locator('#inspectorClose').click();
   await page.locator('#noteAddPage').click();
   await page.locator('#inspectorClose').click();
@@ -278,6 +302,77 @@ try {
   const transformAfterDraw=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
   assert.equal(transformAfterDraw,paintAfterPinch,'One-finger drawing should not move the canvas');
   pass('Paint pinch does not draw; one-finger draw, undo and redo work',paintBefore+' -> '+paintAfterPinch+'; canvas '+hashBeforePinch+' -> '+hashAfterPinch+' -> '+hashAfterDraw+' -> undo '+hashAfterUndo+' -> redo '+hashAfterRedo);
+
+  const stateBeforeExport=await page.evaluate(()=>window.GuioneroStudio.exportState());
+  assert.equal(stateBeforeExport.version,7,'The existing project schema version must remain unchanged');
+  const activeBoard=stateBeforeExport.boards.find(b=>b.id===stateBeforeExport.activeBoard);
+  assert.equal(activeBoard.backgroundColor,'#ffffff','Paint board model background must stay white');
+  const imageCountBefore=stateBeforeExport.images.length;
+  await page.locator('#paintSend').click();
+  await page.waitForFunction(count=>window.GuioneroStudio.exportState().images.length>count,imageCountBefore,{timeout:10000});
+  const fullExport=await page.evaluate(async()=>{
+    const s=window.GuioneroStudio.exportState(),image=s.images[s.images.length-1];
+    const img=new Image();img.src=image.data;await img.decode();
+    const c=document.createElement('canvas');c.width=img.width;c.height=img.height;c.getContext('2d').drawImage(img,0,0);
+    return {mode:image.sourceMode,pixel:Array.from(c.getContext('2d').getImageData(0,0,1,1).data)};
+  });
+  assert.equal(fullExport.mode,'full');
+  assert.deepEqual(fullExport.pixel,[255,255,255,255],'Full-board export should include a white opaque backing');
+  await page.locator('#tabPaint').click();
+  await page.waitForFunction(()=>document.querySelector('#panePaint').classList.contains('active'));
+  const layerImageCount=await page.evaluate(()=>window.GuioneroStudio.exportState().images.length);
+  await page.locator('#paintSendLayer').click();
+  await page.waitForFunction(count=>window.GuioneroStudio.exportState().images.length>count,layerImageCount,{timeout:10000});
+  const layerExport=await page.evaluate(async()=>{
+    const s=window.GuioneroStudio.exportState(),image=s.images[s.images.length-1];
+    const img=new Image();img.src=image.data;await img.decode();
+    const c=document.createElement('canvas');c.width=img.width;c.height=img.height;c.getContext('2d').drawImage(img,0,0);
+    return {mode:image.sourceMode,pixel:Array.from(c.getContext('2d').getImageData(0,0,1,1).data)};
+  });
+  assert.equal(layerExport.mode,'layer');
+  assert.equal(layerExport.pixel[3],0,'Layer-only export must preserve transparent pixels');
+  pass('Paint full export stays white; individual layer export preserves alpha');
+
+  await page.locator('#tabPaint').click();
+  await page.waitForFunction(()=>document.querySelector('#panePaint').classList.contains('active'));
+  const objectId='android-touch-object-test';
+  const objectStart=await page.evaluate(id=>{
+    const s=window.GuioneroStudio.exportState(),b=s.boards.find(x=>x.id===s.activeBoard);
+    const o={id,kind:'text',name:'Objeto táctil',text:'Objeto táctil',x:260,y:240,w:900,h:260,rotation:0,flipX:false,flipY:false,opacity:1,visible:true,layerId:b.activeLayerId,color:'#202124',fontFamily:'Arial',fontSize:64};
+    b.objects.push(o);window.GuioneroStudio.importState(s,{notifyCloud:false});return{x:o.x,y:o.y};
+  },objectId);
+  await page.locator('#paintMode').selectOption('select');
+  await page.locator('#paintFit').click();
+  const objectLocator=page.locator('[data-paint-object-id="'+objectId+'"]');
+  await objectLocator.waitFor({state:'visible',timeout:5000});
+  const objectBox=await objectLocator.boundingBox();
+  assert.ok(objectBox&&objectBox.width>50&&objectBox.height>20,'Paint object must have a reachable touch target');
+  const objectCdp=await mobile.newCDPSession(page);
+  const objectPoint={x:objectBox.x+objectBox.width/2,y:objectBox.y+objectBox.height/2};
+  await touch(objectCdp,'touchStart',[{id:51,...objectPoint}]);
+  await touch(objectCdp,'touchMove',[{id:51,x:objectPoint.x+36,y:objectPoint.y+18}]);
+  await touch(objectCdp,'touchEnd',[]);
+  await page.waitForTimeout(180);
+  const objectAfterDrag=await page.evaluate(id=>{
+    const s=window.GuioneroStudio.exportState(),b=s.boards.find(x=>x.id===s.activeBoard);const o=b.objects.find(x=>x.id===id);return{x:o.x,y:o.y};
+  },objectId);
+  assert.notEqual(objectAfterDrag.x,objectStart.x,'One-finger touch should move a selected Paint object');
+  const movedBox=await objectLocator.boundingBox();
+  const pinchPoint={x:movedBox.x+movedBox.width/2,y:movedBox.y+movedBox.height/2};
+  const objectTransformBefore=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
+  await touch(objectCdp,'touchStart',[{id:61,...pinchPoint}]);
+  await touch(objectCdp,'touchStart',[{id:61,...pinchPoint},{id:62,x:pinchPoint.x+28,y:pinchPoint.y+3}]);
+  await touch(objectCdp,'touchMove',[{id:61,x:pinchPoint.x-10,y:pinchPoint.y+12},{id:62,x:pinchPoint.x+75,y:pinchPoint.y+12}]);
+  await touch(objectCdp,'touchEnd',[]);
+  await page.waitForTimeout(220);
+  const objectAfterPinch=await page.evaluate(id=>{
+    const s=window.GuioneroStudio.exportState(),b=s.boards.find(x=>x.id===s.activeBoard);const o=b.objects.find(x=>x.id===id);return{x:o.x,y:o.y};
+  },objectId);
+  const objectTransformAfter=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
+  assert.deepEqual(objectAfterPinch,objectAfterDrag,'Two-finger pan/zoom must cancel object movement');
+  assert.notEqual(objectTransformAfter,objectTransformBefore,'Two-finger pinch over an object should still navigate Paint');
+  pass('Paint one-finger object movement and two-finger cancellation do not conflict');
+  await objectCdp.detach();
 
   assert.deepEqual(errors,[],'Runtime errors: '+errors.join(' | '));
   pass('Android runtime: no uncaught JavaScript errors');
