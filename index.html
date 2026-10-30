@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script id="guionero-storage-guard">
 (function(){
   'use strict';
@@ -29,6 +29,19 @@
     window.__guioneroSafeStorage=store;
   }
   window.__guioneroStorageFallback=fallback;
+})();
+</script>
+<script id="guionero-android-input-detection">
+(()=>{'use strict';
+ const ua=String(navigator.userAgent||'');
+ const platform=String(navigator.userAgentData?.platform||navigator.platform||'');
+ const androidPlatform=/Android/i.test(ua)||/Android/i.test(platform);
+ const coarsePointer=!!(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches);
+ const touchPoints=Number(navigator.maxTouchPoints||0)>0;
+ const touchCapable=touchPoints||coarsePointer;
+ window.__guioneroTouchCapable=touchCapable;
+ window.__guioneroAndroidTouch=androidPlatform&&touchCapable;
+ if(window.__guioneroAndroidTouch)document.documentElement.classList.add('android-touch-capable');
 })();
 </script>
 <title>Guionero — Editor de guiones · Formato de texto</title>
@@ -2079,7 +2092,7 @@ if(needsIdbHydration){const st=$('saveStatus');if(st)st.textContent='Restaurando
 else{loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();persist();window.GuioneroStudioBooting=false;}
 if(window.__guioneroStorageFallback){const st=$('saveStatus');if(st){st.textContent='Solo esta sesión · exporta antes de cerrar';st.title='El navegador bloqueó el almacenamiento persistente. Exporta el proyecto antes de cerrar.';st.classList.add('storage-temporary');}setTimeout(()=>toast('El navegador bloqueó el almacenamiento persistente. Guionero funciona en esta sesión, pero debes exportar el proyecto antes de cerrar.'),650);}
 
-if(/Android/i.test(navigator.userAgent||'')){
+if(window.__guioneroAndroidTouch){
 {
 const androidPaintWork=$('paintWorkarea'),androidPaintViewport=$('paintViewport'),androidPaintCanvas=$('paintCanvas');
 if(androidPaintWork&&androidPaintViewport&&androidPaintCanvas){
@@ -2141,7 +2154,7 @@ if(androidNodeWrap&&androidNodeWorld){
 const $=id=>document.getElementById(id);
 const LOCAL_KEY='guionero_local_v1', STUDIO_KEY='guionero_studio_v1', ACTIVE_KEY='guionero_active_project_id', FALLBACK_KEY='guionero_project_library_fallback_v1';
 const PICKER_VALUE='__search_project_files__';
-const isAndroid=/Android/i.test(navigator.userAgent||'');
+const isAndroid=!!window.__guioneroAndroidTouch;
 if(isAndroid){document.body.classList.add('android-device');$('tabNote')?.removeAttribute('hidden');$('paneNote')?.removeAttribute('hidden');$('tabPaint')?.removeAttribute('hidden');$('panePaint')?.removeAttribute('hidden');}
 const toolbar=$('scriptProjectToolbar'),oldNew=$('newScriptBtn');
 if(toolbar&&oldNew){oldNew.classList.add('project-new-script-main');oldNew.textContent='＋ NUEVO GUIÓN';oldNew.title='Crear un proyecto independiente';toolbar.insertBefore(oldNew,$('projectImportBtn'));oldNew.style.display='';}
@@ -2552,7 +2565,7 @@ body.android-device .android-paint-tools-body .android-paint-history button{flex
 <script id="guionero-android-touch-update-script">
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
-if(!/Android/i.test(navigator.userAgent||''))return;
+if(!window.__guioneroAndroidTouch)return;
 document.body.classList.add('android-device');
 ['tabNote','paneNote','tabPaint','panePaint'].forEach(id=>$(id)?.removeAttribute('hidden'));
 const projectDock=$('projectManagementDock');
