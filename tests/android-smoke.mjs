@@ -59,6 +59,7 @@ try {
   assert.equal(await projPanel.isHidden(),true);
   await projToggle.click();
   assert.equal(await projPanel.isVisible(),true);
+  for (const id of ['#newScriptBtn','#projectImportBtn','#projectSaveAsBtn']) assert.ok(await page.locator(id).isVisible(), id+' must be accessible while expanded');
   await projToggle.click();
   assert.equal(await projPanel.isHidden(),true);
   pass('Script project accordion opens and closes');
@@ -73,6 +74,39 @@ try {
   assert.equal(await nodePanel.isVisible(),true);
   await nodeToggle.click();
   assert.equal(await nodePanel.isHidden(),true);
+
+  // Create two manual pages and verify that a real touchscreen drag joins compatible ports.
+  await nodeToggle.click();
+  await page.locator('#noteAddPage').click();
+  await page.locator('#inspectorClose').click();
+  await page.locator('#noteAddPage').click();
+  await page.locator('#inspectorClose').click();
+  let pair = await page.evaluate(() => {
+    const s=window.GuioneroStudio.exportState(), ids=s.pages.slice(-2).map(p=>p.id);
+    s.positions=s.positions||{};
+    s.positions[ids[0]]={x:0,y:70};
+    s.positions[ids[1]]={x:280,y:110};
+    window.GuioneroStudio.importState(s,{notifyCloud:false});
+    return ids;
+  });
+  await page.waitForTimeout(220);
+  const outputSelector='.note-node[data-node-id="'+pair[0]+'"] .node-port[data-port="write-out"]';
+  const inputSelector='.note-node[data-node-id="'+pair[1]+'"] .node-port[data-port="write-in"]';
+  const outBox=await page.locator(outputSelector).boundingBox();
+  const inBox=await page.locator(inputSelector).boundingBox();
+  assert.ok(outBox&&inBox,'Compatible page ports must be reachable in Node');
+  const connectionCdp=await mobile.newCDPSession(page);
+  await touch(connectionCdp,'touchStart',[{id:41,x:outBox.x+outBox.width/2,y:outBox.y+outBox.height/2}]);
+  await touch(connectionCdp,'touchMove',[{id:41,x:inBox.x+inBox.width/2,y:inBox.y+inBox.height/2}]);
+  await touch(connectionCdp,'touchEnd',[]);
+  await page.waitForTimeout(250);
+  const connected=await page.evaluate(ids=>{
+    const s=window.GuioneroStudio.exportState();
+    return s.connections.some(c=>c.type==='write'&&c.fromNode===ids[0]&&c.toNode===ids[1]&&c.fromPort==='write-out'&&c.toPort==='write-in');
+  },pair);
+  assert.equal(connected,true,'Touch drag should connect an output to a compatible input');
+  pass('Node connects compatible ports with a one-finger touch drag');
+  await connectionCdp.detach();
 
   const cdp=await mobile.newCDPSession(page);
   const noteBefore=await page.locator('#noteWorld').evaluate(el=>el.style.transform);
@@ -117,6 +151,13 @@ try {
   pass('Paint accordion, brush, color, brush size, undo and redo');
 
   const paintCdp=await mobile.newCDPSession(page);
+  async function canvasHash() {
+    return page.locator('#paintCanvas').evaluate(el=>{
+      const d=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
+      let h=2166136261;for(let i=0;i<d.length;i++)h=Math.imul(h^d[i],16777619)>>>0;return h;
+    });
+  }
+  const hashBeforePinch=await canvasHash();
   const paintBefore=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
   const vr=await center(page,'#paintViewport');
   const pp1={x:vr.left+Math.min(35,vr.width*.25),y:vr.top+Math.min(70,vr.height*.25)};
@@ -126,25 +167,34 @@ try {
   await touch(paintCdp,'touchEnd',[]);
   await page.waitForTimeout(220);
   const paintAfterPinch=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
+  const hashAfterPinch=await canvasHash();
   assert.notEqual(paintAfterPinch,paintBefore,'Paint pinch did not change zoom/pan');
+  assert.equal(hashAfterPinch,hashBeforePinch,'Two-finger navigation must not draw on the canvas');
 
-  async function canvasHash() {
-    return page.locator('#paintCanvas').evaluate(el=>{
-      const d=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
-      let h=0;for(let i=0;i<d.length;i+=97)h=(h*33+d[i])>>>0;return h;
-    });
-  }
-  const hashBefore=await canvasHash();
-  const cr=await center(page,'#paintViewport');
-  const pt={x:cr.left+Math.min(35,cr.width*.25),y:cr.top+35};
-  await touch(paintCdp,'touchStart',[{id:31,...pt}]);
-  await touch(paintCdp,'touchMove',[{id:31,x:pt.x+40,y:pt.y+30}]);
-  await touch(paintCdp,'touchMove',[{id:31,x:pt.x+75,y:pt.y+45}]);
+  const cr=await page.locator('#paintCanvas').evaluate(el=>{
+    const r=el.getBoundingClientRect(),v=document.querySelector('#paintViewport').getBoundingClientRect();
+    const left=Math.max(r.left,v.left),top=Math.max(r.top,v.top),right=Math.min(r.right,v.right),bottom=Math.min(r.bottom,v.bottom);
+    if(right-left<30||bottom-top<30)throw new Error('Paint canvas has no usable visible touch area');
+    return{x:left+Math.min(45,(right-left)/2),y:top+Math.min(45,(bottom-top)/2)};
+  });
+  await touch(paintCdp,'touchStart',[{id:31,...cr}]);
+  await touch(paintCdp,'touchMove',[{id:31,x:cr.x+40,y:cr.y+30}]);
+  await touch(paintCdp,'touchMove',[{id:31,x:cr.x+75,y:cr.y+45}]);
   await touch(paintCdp,'touchEnd',[]);
-  await page.waitForTimeout(400);
-  const hashAfter=await canvasHash();
-  assert.notEqual(hashAfter,hashBefore,'One-finger touch did not draw on Paint');
-  pass('Paint two-finger navigation and one-finger drawing',paintBefore+' -> '+paintAfterPinch+'; canvas '+hashBefore+' -> '+hashAfter);
+  await page.waitForTimeout(350);
+  const hashAfterDraw=await canvasHash();
+  assert.notEqual(hashAfterDraw,hashAfterPinch,'One-finger touch did not draw on Paint');
+  await page.locator('#androidPaintUndo').click();
+  await page.waitForTimeout(350);
+  const hashAfterUndo=await canvasHash();
+  assert.equal(hashAfterUndo,hashAfterPinch,'Undo should restore the previous drawing state');
+  await page.locator('#androidPaintRedo').click();
+  await page.waitForTimeout(350);
+  const hashAfterRedo=await canvasHash();
+  assert.equal(hashAfterRedo,hashAfterDraw,'Redo should restore the drawn state');
+  const transformAfterDraw=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
+  assert.equal(transformAfterDraw,paintAfterPinch,'One-finger drawing should not move the canvas');
+  pass('Paint pinch does not draw; one-finger draw, undo and redo work',paintBefore+' -> '+paintAfterPinch+'; canvas '+hashBeforePinch+' -> '+hashAfterPinch+' -> '+hashAfterDraw+' -> undo '+hashAfterUndo+' -> redo '+hashAfterRedo);
 
   assert.deepEqual(errors,[],'Runtime errors: '+errors.join(' | '));
   pass('Android runtime: no uncaught JavaScript errors');
