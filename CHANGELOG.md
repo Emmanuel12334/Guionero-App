@@ -1,5 +1,14 @@
 # Registro de cambios
 
+## Experiencia Android ampliada — 2026-10-29
+
+- Detección Android basada en plataforma y capacidad táctil; se mantienen los estilos y controles Android detrás de la clase de dispositivo.
+- Paint incorpora controles flotantes de zoom, porcentaje, Ajustar y 100%, y un panel de capas en cajón para dejar el lienzo libre.
+- El tablero conserva el blanco aunque la interfaz use tema oscuro; las capas rasterizadas mantienen la transparencia original.
+- Un gesto de dos dedos cancela de forma segura los trazos y transformaciones de objeto que estuvieran empezando.
+- Script añade modo enfocado y menú de formato plegable; el ajuste del viewport acompaña los cambios del teclado virtual.
+- La validación incluye teléfonos y tabletas, además de comprobaciones de escritorio.
+
 ## Revisión de Android para teléfonos — 2026-10-29
 
 - Adaptado Paint a un panel de capas superior en orientación vertical para ampliar el área útil del lienzo.
