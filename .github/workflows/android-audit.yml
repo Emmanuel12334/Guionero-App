@@ -2,7 +2,7 @@ name: Android mobile regression audit
 
 on:
   push:
-    branches: ["main", "android-review", "android-phone-layout-pass"]
+    branches: ["main", "android-review", "android-phone-layout-pass", "android-full-experience"]
   workflow_dispatch:
 
 permissions:
@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
