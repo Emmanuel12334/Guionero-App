@@ -1,0 +1,29 @@
+name: Android mobile regression audit
+
+on:
+  push:
+    branches: ["main", "android-review"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium-android-emulation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright test runner
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Check embedded JavaScript and HTML structure
+        run: npm run check --if-present
+      - name: Run Android touch and desktop regression suite
+        run: node tests/android-smoke.mjs
