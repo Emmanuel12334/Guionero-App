@@ -2,7 +2,7 @@ name: Android mobile regression audit
 
 on:
   push:
-    branches: ["main", "android-review"]
+    branches: ["main", "android-review", "android-phone-layout-pass"]
   workflow_dispatch:
 
 permissions:
