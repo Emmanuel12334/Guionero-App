@@ -2628,7 +2628,7 @@ if(layers&&sourceTool&&sourceColor&&sourceSize&&!$('androidPaintTools')){
  color.addEventListener('input',()=>{sourceColor.value=color.value;sourceColor.dispatchEvent(new Event('input',{bubbles:true}));});color.addEventListener('change',()=>{sourceColor.value=color.value;sourceColor.dispatchEvent(new Event('change',{bubbles:true}));});
  size.addEventListener('input',()=>{sourceSize.value=size.value;sourceSize.dispatchEvent(new Event('input',{bubbles:true}));});size.addEventListener('change',()=>{sourceSize.value=size.value;sourceSize.dispatchEvent(new Event('change',{bubbles:true}));});
  const syncTools=()=>{tool.value=sourceTool.value;color.value=sourceColor.value;size.value=sourceSize.value;};sourceTool.addEventListener('change',syncTools);sourceColor.addEventListener('change',syncTools);sourceSize.addEventListener('change',syncTools);
- undo.addEventListener('click',()=>{$('paintUndo')?.click();});redo.addEventListener('click',()=>{$('paintRedo')?.click();});
+ safeTap(undo,()=>{$('paintUndo')?.click();});safeTap(redo,()=>{$('paintRedo')?.click();});
 }
 })();
 </script>
@@ -3465,7 +3465,20 @@ body.android-device .android-safe-spacer {
  if(!window.__guioneroAndroidTouch)return;
  const $=id=>document.getElementById(id);
  const body=document.body,root=document.documentElement;
- const safeTap=(button,fn)=>{button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();fn(e);});};
+ const safeTap=(button,fn)=>{
+  let suppressClickUntil=0;
+  button.addEventListener('pointerup',e=>{
+   if(e.pointerType!=='touch'&&e.pointerType!=='pen')return;
+   e.preventDefault();
+   suppressClickUntil=performance.now()+700;
+   fn(e);
+   // Let pointerup bubble so the shared Paint pointer tracker can release its ID.
+  },{passive:false});
+  button.addEventListener('click',e=>{
+   if(e.detail!==0&&performance.now()<suppressClickUntil){e.preventDefault();e.stopPropagation();return;}
+   e.preventDefault();e.stopPropagation();fn(e);
+  });
+ };
  const showToast=message=>{const toast=$('toast');if(!toast)return;toast.textContent=message;toast.classList.add('show');clearTimeout(toast._androidTimer);toast._androidTimer=setTimeout(()=>toast.classList.remove('show'),2400);};
 
  // Script focus mode and a compact formatting popover; all original controls are moved, not cloned.
