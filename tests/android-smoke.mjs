@@ -292,12 +292,13 @@ try {
   const hashAfterDraw=await canvasHash();
   assert.notEqual(hashAfterDraw,hashAfterPinch,'One-finger touch did not draw on Paint');
   await layerDrawer.tap();
-  if(!await tools.evaluate(el=>el.open))await tools.locator('summary').tap();
-  await page.locator('#androidPaintUndo').click();
+  assert.ok(await page.locator('#androidPaintUndo').isVisible(),'Paint undo should be visible when the layer drawer is open');
+  assert.ok(await page.locator('#androidPaintRedo').isVisible(),'Paint redo should be visible when the layer drawer is open');
+  await page.locator('#androidPaintUndo').tap();
   await page.waitForTimeout(350);
   const hashAfterUndo=await canvasHash();
   assert.equal(hashAfterUndo,hashAfterPinch,'Undo should restore the previous drawing state');
-  await page.locator('#androidPaintRedo').click();
+  await page.locator('#androidPaintRedo').tap();
   await page.waitForTimeout(350);
   const hashAfterRedo=await canvasHash();
   assert.equal(hashAfterRedo,hashAfterDraw,'Redo should restore the drawn state');
