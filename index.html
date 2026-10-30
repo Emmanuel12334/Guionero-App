@@ -3439,6 +3439,7 @@ body.android-device .android-safe-spacer {
  // Paint quick controls operate the existing zoom and Fit functions.
  const paintViewport=$('paintViewport'),paintWork=$('paintWorkarea'),paintLayers=$('paintLayersPanel');
  if(paintViewport&&paintWork&&!$('androidPaintControls')){
+  paintWork.classList.remove('paint-layers-collapsed');
   const controls=document.createElement('div');controls.id='androidPaintControls';controls.setAttribute('role','toolbar');controls.setAttribute('aria-label','Controles táctiles de Paint');
   const layers=document.createElement('button');layers.id='androidPaintLayersToggle';layers.type='button';layers.textContent='☷ Capas';layers.setAttribute('aria-expanded','false');
   const out=document.createElement('button');out.type='button';out.id='androidPaintZoomOut';out.textContent='−';out.title='Alejar lienzo';out.setAttribute('aria-label','Alejar lienzo');
