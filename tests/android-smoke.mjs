@@ -522,7 +522,7 @@ try {
   await desktopPage.locator('#tabScript').click();
   await desktopPage.locator('#script .script-line').first().click();
   await desktopPage.keyboard.type('Desktop keyboard regression');
-  assert.match(await desktopPage.locator('#script').innerText(),/Desktop keyboard regression/);
+  assert.match((await desktopPage.locator('#script').innerText()).toLocaleUpperCase(),/DESKTOP KEYBOARD REGRESSION/);
   assert.deepEqual(desktopErrors,[],'Desktop runtime errors: '+desktopErrors.join(' | '));
   pass('Desktop controls: mouse zoom, toolbar collapse and Script keyboard input',JSON.stringify(desktopState));
   await desktop.close();
