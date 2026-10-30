@@ -222,13 +222,16 @@ try {
       scrollWidth:document.documentElement.scrollWidth,
       note:getComputedStyle(document.querySelector('#tabNote')).display,
       paint:getComputedStyle(document.querySelector('#tabPaint')).display,
-      tabHeight:document.querySelector('#tabPaint').getBoundingClientRect().height
+      tabHeight:document.querySelector('#tabPaint').getBoundingClientRect().height,
+      tabMinHeight:getComputedStyle(document.querySelector('#tabPaint')).minHeight,
+      tabBoxSizing:getComputedStyle(document.querySelector('#tabPaint')).boxSizing,
+      tabVisibility:getComputedStyle(document.querySelector('#tabPaint')).visibility
     }));
     assert.equal(tabs.android,true,layout.name+' must be detected as Android');
     assert.notEqual(tabs.note,'none',layout.name+' must expose Node');
     assert.notEqual(tabs.paint,'none',layout.name+' must expose Paint');
     assert.ok(tabs.scrollWidth<=tabs.width+2,layout.name+' has horizontal page overflow');
-    assert.ok(tabs.tabHeight>=40,layout.name+' tab is too small for touch');
+    assert.ok(tabs.tabHeight>=40,layout.name+' tab is too small for touch: '+JSON.stringify(tabs));
     await phonePage.locator('#tabPaint').tap();
     await phonePage.waitForFunction(()=>document.querySelector('#panePaint').classList.contains('active'));
     const geometry=await phonePage.evaluate(()=> {
