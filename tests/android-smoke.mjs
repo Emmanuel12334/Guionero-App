@@ -302,7 +302,15 @@ try {
   const hashAfterDraw=await canvasHash();
   assert.notEqual(hashAfterDraw,hashAfterPinch,'One-finger touch did not draw on Paint');
   await layerDrawer.tap();
-  assert.ok(await page.locator('#androidPaintUndo').isVisible(),'Paint undo should be visible when the layer drawer is open');
+  const undoDebug=await page.evaluate(()=>{
+    const ids=['paintWorkarea','paintViewport','paintLayersPanel','androidPaintControls','androidPaintLayersToggle','androidPaintUndo','androidPaintRedo','androidPaintTools'];
+    return Object.fromEntries(ids.map(id=>{
+      const el=document.getElementById(id);if(!el)return[id,null];
+      const r=el.getBoundingClientRect(),s=getComputedStyle(el);
+      return[id,{parent:el.parentElement?.id||el.parentElement?.className||el.parentElement?.tagName,hidden:el.hidden,open:el.open,ariaHidden:el.getAttribute('aria-hidden'),display:s.display,visibility:s.visibility,opacity:s.opacity,transform:s.transform,width:r.width,height:r.height,x:r.x,y:r.y}];
+    }));
+  });
+  assert.ok(await page.locator('#androidPaintUndo').isVisible(),'Paint undo should be visible when the layer drawer is open: '+JSON.stringify(undoDebug));
   assert.ok(await page.locator('#androidPaintRedo').isVisible(),'Paint redo should be visible when the layer drawer is open');
   await page.locator('#androidPaintUndo').tap();
   await page.waitForTimeout(350);
