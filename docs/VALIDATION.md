@@ -19,3 +19,15 @@ Fecha del paquete: 2026-10-29.
 - Una de las pruebas de humo mostró que el almacenamiento persistente estaba bloqueado en el entorno de prueba. En navegadores que bloqueen el almacenamiento, la aplicación puede mantener datos solo durante la sesión y debe exportarse el proyecto antes de cerrar.
 
 Por estas razones, el paquete es una base de código lista para subir y seguir probando, no una garantía de ausencia total de errores.
+
+## Revisión Android completa — 2026-10-29
+
+Cobertura automatizada ampliada para:
+- Detección por plataforma Android más capacidad de puntero táctil (no solo User-Agent).
+- Controles móviles de Paint: zoom +/- con porcentaje, Fit, reset 100% y panel de capas desplegable.
+- Fondo blanco del tablero con el tema de interfaz oscuro y comprobación independiente de la transparencia alfa del lienzo.
+- Modo enfocado de Script, herramientas de formato plegables, escritura, selección, copiar/pegar y deshacer en Chromium.
+- Teléfonos 360×740, 393×852, 412×915 y 915×412; tabletas 800×1280 y 1280×800.
+- Regresión desktop prevista mediante comparación con la versión base `46e69883e55768b9afcc637e48fb5327e031d2bd`.
+
+Límites: Playwright emula Chrome/Android con eventos táctiles. No equivale a una prueba física del teclado Gboard, Samsung Keyboard, lápiz activo/pasivo, barras del sistema y WebView de cada fabricante. La batería tampoco puede certificar exhaustivamente todas las combinaciones de proyectos grandes, recursos binarios o almacenamiento bajo cuota.
