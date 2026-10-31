@@ -203,6 +203,12 @@ try {
   await page.locator('#paintUndo').scrollIntoViewIfNeeded();
   assert.ok(await page.locator('#paintUndo').isVisible(),'Undo should remain reachable inside the scrollable Paint tool drawer');
   assert.ok(await page.locator('#paintRedo').isVisible(),'Redo should remain reachable inside the scrollable Paint tool drawer');
+  const imageImportChoice=await page.locator('#paintImport').isVisible();
+  assert.equal(imageImportChoice,true,'Paint image import must remain available on Android');
+  const chooserPromise=page.waitForEvent('filechooser');
+  await page.locator('#paintImport').click();
+  await chooserPromise;
+
   await page.locator('.android-paint-sheet-head button').tap();
   assert.equal(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),false);
   await page.locator('#androidPaintLayersToggle').tap();
@@ -371,11 +377,17 @@ try {
   await page.waitForTimeout(350);
   const hashAfterDraw=await canvasHash();
   assert.notEqual(hashAfterDraw,hashAfterPinch,'One-finger touch did not draw on Paint');
-  await page.locator('#androidPaintUndo').click();
+  await page.locator('#androidPaintToolsToggle').tap();
+  await page.locator('#paintUndo').scrollIntoViewIfNeeded();
+  await page.locator('#paintUndo').click();
+  await page.locator('.android-paint-sheet-head button').tap();
   await page.waitForTimeout(350);
   const hashAfterUndo=await canvasHash();
   assert.equal(hashAfterUndo,hashAfterPinch,'Undo should restore the previous drawing state');
-  await page.locator('#androidPaintRedo').click();
+  await page.locator('#androidPaintToolsToggle').tap();
+  await page.locator('#paintRedo').scrollIntoViewIfNeeded();
+  await page.locator('#paintRedo').click();
+  await page.locator('.android-paint-sheet-head button').tap();
   await page.waitForTimeout(350);
   const hashAfterRedo=await canvasHash();
   assert.equal(hashAfterRedo,hashAfterDraw,'Redo should restore the drawn state');
