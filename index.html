@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script id="guionero-storage-guard">
 (function(){
   'use strict';
@@ -490,6 +490,28 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
 
 </head>
 <body data-theme="light">
+<script id="guionero-android-capability-detection">
+(()=>{'use strict';
+ const nav=window.navigator||{},ua=String(nav.userAgent||''),platform=String(nav.userAgentData?.platform||nav.platform||'');
+ const touch=Number(nav.maxTouchPoints||0)>0||('ontouchstart'in window);
+ const coarse=!!(window.matchMedia?.('(pointer: coarse)').matches||window.matchMedia?.('(any-pointer: coarse)').matches);
+ const android=/Android/i.test(platform)||(/Android/i.test(ua)&&touch);
+ const enabled=android&&touch;
+ window.__guioneroAndroidTouchDevice=enabled;
+ window.__guioneroAndroidCoarsePointer=coarse;
+ if(!enabled)return;
+ const body=document.body,root=document.documentElement;
+ body.classList.add('android-device');
+ const update=()=>{
+  const w=window.innerWidth||0,h=window.innerHeight||0;
+  const tablet=Math.min(w,h)>=600||nav.userAgentData?.mobile===false;
+  body.classList.toggle('android-tablet',!!tablet);
+  body.classList.toggle('android-phone',!tablet);
+  root.dataset.androidFormFactor=tablet?'tablet':'phone';
+ };
+ update();window.addEventListener('resize',update,{passive:true});window.addEventListener('orientationchange',update,{passive:true});
+})();
+</script>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
@@ -2079,7 +2101,7 @@ if(needsIdbHydration){const st=$('saveStatus');if(st)st.textContent='Restaurando
 else{loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();persist();window.GuioneroStudioBooting=false;}
 if(window.__guioneroStorageFallback){const st=$('saveStatus');if(st){st.textContent='Solo esta sesión · exporta antes de cerrar';st.title='El navegador bloqueó el almacenamiento persistente. Exporta el proyecto antes de cerrar.';st.classList.add('storage-temporary');}setTimeout(()=>toast('El navegador bloqueó el almacenamiento persistente. Guionero funciona en esta sesión, pero debes exportar el proyecto antes de cerrar.'),650);}
 
-if(/Android/i.test(navigator.userAgent||'')){
+if(window.__guioneroAndroidTouchDevice===true){
 {
 const androidPaintWork=$('paintWorkarea'),androidPaintViewport=$('paintViewport'),androidPaintCanvas=$('paintCanvas');
 if(androidPaintWork&&androidPaintViewport&&androidPaintCanvas){
@@ -2147,7 +2169,7 @@ if(androidNodeWrap&&androidNodeWorld){
 const $=id=>document.getElementById(id);
 const LOCAL_KEY='guionero_local_v1', STUDIO_KEY='guionero_studio_v1', ACTIVE_KEY='guionero_active_project_id', FALLBACK_KEY='guionero_project_library_fallback_v1';
 const PICKER_VALUE='__search_project_files__';
-const isAndroid=/Android/i.test(navigator.userAgent||'');
+const isAndroid=window.__guioneroAndroidTouchDevice===true;
 if(isAndroid){document.body.classList.add('android-device');$('tabNote')?.removeAttribute('hidden');$('paneNote')?.removeAttribute('hidden');$('tabPaint')?.removeAttribute('hidden');$('panePaint')?.removeAttribute('hidden');}
 const toolbar=$('scriptProjectToolbar'),oldNew=$('newScriptBtn');
 if(toolbar&&oldNew){oldNew.classList.add('project-new-script-main');oldNew.textContent='＋ NUEVO GUIÓN';oldNew.title='Crear un proyecto independiente';toolbar.insertBefore(oldNew,$('projectImportBtn'));oldNew.style.display='';}
