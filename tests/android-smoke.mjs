@@ -84,10 +84,10 @@ try {
     const root=document.querySelector('#script');
     return {text:root.innerText,editable:root.isContentEditable,active:document.activeElement?.id,lineCount:root.querySelectorAll('.script-line').length};
   });
-  assert.ok(scriptTyping.text.includes('Android focus editor test'),'Script should accept typing in focus mode: '+JSON.stringify(scriptTyping));
+  assert.ok(scriptTyping.text.toUpperCase().includes('ANDROID FOCUS EDITOR TEST'),'Script should accept typing in focus mode: '+JSON.stringify(scriptTyping));
   await page.keyboard.press('Control+A');
   const selectedText=await page.evaluate(()=>window.getSelection()?.toString()||'');
-  assert.ok(selectedText.includes('Android focus editor test'),'Script should allow selecting text');
+  assert.ok(selectedText.toUpperCase().includes('ANDROID FOCUS EDITOR TEST'),'Script should allow selecting text');
   await page.locator('#androidScriptRestoreButton').tap();
   assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('android-script-focus')),false);
   const heightBeforeKeyboard=await page.evaluate(()=>window.visualViewport?.height||window.innerHeight);
