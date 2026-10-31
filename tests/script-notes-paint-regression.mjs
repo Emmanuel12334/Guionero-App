@@ -183,7 +183,11 @@ try {
   const canvas=page.locator('#paintCanvas');
   assert.equal(await canvas.evaluate(el=>getComputedStyle(el).pointerEvents),'auto','The Text tool must make the canvas receive pointer input');
   const box=await canvas.boundingBox();
-  await page.mouse.click(box.x+box.width*.45,box.y+box.height*.35);
+  const paintPoint={x:box.x+box.width*.45,y:box.y+box.height*.35};
+  await page.evaluate(()=>{window.__paintTestPointerdowns=0;document.getElementById('paintCanvas').addEventListener('pointerdown',()=>window.__paintTestPointerdowns++,true);});
+  console.log('PAINT BEFORE CLICK:',JSON.stringify(await page.evaluate(p=>{const c=document.getElementById('paintCanvas'),target=document.elementFromPoint(p.x,p.y),state=window.GuioneroStudio.exportState(),b=state.boards.find(x=>x.id===state.activeBoard),layer=b.layers.find(x=>x.id===b.activeLayerId);return{hit:target?.tagName,hitId:target?.id,hitClass:target?.className,tool:document.getElementById('paintTool').value,mode:document.getElementById('paintMode').value,pointerEvents:getComputedStyle(c).pointerEvents,layerVisible:layer?.visible,boardObjects:b.objects.length,rect:c.getBoundingClientRect().toJSON()};},paintPoint)));
+  await page.mouse.click(paintPoint.x,paintPoint.y);
+  console.log('PAINT AFTER CLICK:',JSON.stringify(await page.evaluate(()=>({pointerdowns:window.__paintTestPointerdowns,objects:window.GuioneroStudio.exportState().boards.find(x=>x.id===window.GuioneroStudio.getActiveBoardId()).objects.map(o=>({kind:o.kind,text:o.text,editing:o.editing})),textNodes:document.querySelectorAll('.paint-text-content').length}))));
   const textObject=page.locator('.paint-text-content[contenteditable="true"]').last();
   await textObject.waitFor({state:'visible',timeout:3000});
   await textObject.fill('GUIONERO PNG EXPORT');
