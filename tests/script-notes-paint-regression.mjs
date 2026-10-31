@@ -196,10 +196,17 @@ try {
     const x=c.getContext('2d');x.fillStyle='#d22';x.fillRect(0,0,8,8);
     return c.toDataURL('image/png').split(',')[1];
   });
-  const imageChooserPromise=page.waitForEvent('filechooser');
-  await page.locator('#paintImport').click();
-  const imageChooser=await imageChooserPromise;
-  await imageChooser.setFiles({name:'regression-red-square.png',mimeType:'image/png',buffer:Buffer.from(imageData,'base64')});
+  const pickerCalled=await page.evaluate(()=>{
+    const input=document.getElementById('paintImportInput');
+    const original=input.click.bind(input);
+    window.__paintPickerTriggered=false;
+    input.click=()=>{window.__paintPickerTriggered=true;};
+    document.getElementById('paintImport').click();
+    input.click=original;
+    return window.__paintPickerTriggered;
+  });
+  assert.equal(pickerCalled,true,'IMPORTAR IMAGEN button should invoke the native file input');
+  await page.locator('#paintImportInput').setInputFiles({name:'regression-red-square.png',mimeType:'image/png',buffer:Buffer.from(imageData,'base64')});
   await page.waitForFunction(()=>{
     const s=window.GuioneroStudio.exportState(),b=s.boards.find(x=>x.id===s.activeBoard);
     return b.objects.some(o=>o.kind!=='text'&&o.data);
