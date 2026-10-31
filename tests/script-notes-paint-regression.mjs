@@ -94,7 +94,7 @@ try {
   await page.waitForSelector('#picker .history-option');
   await fillActive('EXT. CALLE NUEVA - DÍA');
   assert.equal(await page.locator('#picker').evaluate(el=>el.classList.contains('visible')),false);
-  assert.equal((await activeLine()).innerText(),'EXT. CALLE NUEVA - DÍA');
+  assert.equal(await (await activeLine()).innerText(),'EXT. CALLE NUEVA - DÍA');
   console.log('PASS: typing a new scene closes suggestions without replacing text');
 
   await enterNext();
