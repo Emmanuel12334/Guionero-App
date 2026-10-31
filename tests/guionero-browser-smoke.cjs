@@ -110,6 +110,9 @@ async function paintPointerDrag(page, useTouch, from, to) {
 
 async function testPaintText(page, label, useTouch) {
   await page.locator('#tabPaint').click();
+  if (useTouch && await page.locator('#androidPaintToolsToggle').isVisible()) {
+    await page.locator('#androidPaintToolsToggle').click();
+  }
   const toolbar = page.locator('#paintToolbar');
   if (await toolbar.evaluate(el => el.classList.contains('paint-toolbar-collapsed'))) await page.locator('#paintToolbarToggle').click();
   await page.locator('#paintTextBtn').click();
