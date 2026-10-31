@@ -71,8 +71,11 @@ try {
   assert.deepEqual(history.scenes,['EXT. PARQUE - TARDE','INT. CASA - NOCHE']);
   console.log('PASS: scene history stored only after project save');
 
+  console.log('BEFORE HISTORY REOPEN:',JSON.stringify(await page.evaluate(()=>[...(document.querySelector('#script')?.children||[])].map(n=>({cls:n.className,type:n.dataset.type,active:n.dataset.active,text:n.innerText})))));
   await enterNext();
+  console.log('AFTER ENTER NEXT:',JSON.stringify(await page.evaluate(()=>[...(document.querySelector('#script')?.children||[])].map(n=>({cls:n.className,type:n.dataset.type,active:n.dataset.active,text:n.innerText})))));
   await chooseType('SCENE');
+  console.log('AFTER TYPE CHOICE:',JSON.stringify(await page.evaluate(()=>[...(document.querySelector('#script')?.children||[])].map(n=>({cls:n.className,type:n.dataset.type,active:n.dataset.active,text:n.innerText})))));
   await page.waitForSelector('#picker .history-option',{timeout:3000});
   assert.equal(await page.locator('#picker .history-option').count(),2);
   await page.keyboard.press('ArrowRight');
