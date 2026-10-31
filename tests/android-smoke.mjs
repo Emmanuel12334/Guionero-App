@@ -302,9 +302,11 @@ try {
 
   // Broader phone layout matrix: compact/large portrait and a phone held horizontally.
   const phoneLayouts = [
-    {name:'compact portrait',width:360,height:740,orientation:'portrait'},
-    {name:'large portrait',width:412,height:915,orientation:'portrait'},
-    {name:'landscape phone',width:915,height:412,orientation:'landscape'}
+    {name:'compact portrait',width:360,height:740,orientation:'portrait',form:'phone'},
+    {name:'large portrait',width:412,height:915,orientation:'portrait',form:'phone'},
+    {name:'landscape phone',width:915,height:412,orientation:'landscape',form:'phone'},
+    {name:'tablet portrait',width:800,height:1280,orientation:'portrait',form:'tablet'},
+    {name:'tablet landscape',width:1280,height:800,orientation:'landscape',form:'tablet'}
   ];
   for (const layout of phoneLayouts) {
     const context=await browser.newContext({
@@ -317,7 +319,8 @@ try {
     await boot(phonePage);
     const tabs=await phonePage.evaluate(()=>({
       android:document.body.classList.contains('android-device'),
-      androidStylesheet:!!document.querySelector('#guionero-android-phone-layout') && !!document.querySelector('#guionero-android-phone-layout').sheet,
+      formFactor:document.documentElement.dataset.androidFormFactor,
+      androidStylesheet:!!document.querySelector('#guionero-android-complete-style') && !!document.querySelector('#guionero-android-complete-style').sheet,
       width:document.documentElement.clientWidth,
       scrollWidth:document.documentElement.scrollWidth,
       note:getComputedStyle(document.querySelector('#tabNote')).display,
@@ -329,6 +332,7 @@ try {
     }));
     assert.equal(tabs.android,true,layout.name+' must be detected as Android');
     assert.equal(tabs.androidStylesheet,true,layout.name+' Android stylesheet must be loaded');
+    assert.equal(tabs.formFactor,layout.form,layout.name+' should be identified as '+layout.form);
     assert.notEqual(tabs.note,'none',layout.name+' must expose Node');
     assert.notEqual(tabs.paint,'none',layout.name+' must expose Paint');
     assert.ok(tabs.scrollWidth<=tabs.width+2,layout.name+' has horizontal page overflow');
@@ -338,45 +342,41 @@ try {
     const geometry=await phonePage.evaluate(()=> {
       const rect=id=>{const r=document.querySelector(id).getBoundingClientRect();return{width:r.width,height:r.height};};
       return {
-        direction:getComputedStyle(document.querySelector('#paintWorkarea')).flexDirection,
-        work:rect('#paintWorkarea'),
-        layers:rect('#paintLayersPanel'),
-        viewport:rect('#paintViewport'),
-        toolbarToggle:rect('#paintToolbarToggle'),
-        fit:rect('#paintFit'),
-        layersToggle:rect('#paintLayersToggle')
+        work:rect('#paintWorkarea'),viewport:rect('#paintViewport'),
+        dock:rect('#androidPaintDock'),
+        tools:rect('#androidPaintToolsToggle'),
+        layers:rect('#androidPaintLayersToggle'),
+        background:getComputedStyle(document.querySelector('#paintBoard')).backgroundColor
       };
     });
-    assert.ok(geometry.work.width>0&&geometry.work.height>0,layout.name+' Paint workspace is not visible');
-    assert.ok(geometry.toolbarToggle.height>=40,layout.name+' Paint toolbar toggle is too small');
-    assert.ok(geometry.fit.height>=40,layout.name+' Paint fit button is too small');
-    assert.ok(geometry.layersToggle.height>=40,layout.name+' Paint layer toggle is too small');
-    if(layout.orientation==='portrait'){
-      assert.equal(geometry.direction,'column','Portrait Paint should stack layers above the canvas');
-      assert.ok(geometry.viewport.width>=geometry.work.width*.94,layout.name+' canvas viewport is too narrow');
-    }else{
-      assert.equal(geometry.direction,'row','Landscape Paint should place layers beside the canvas');
-      assert.ok(geometry.viewport.width>=geometry.work.width*.55,layout.name+' landscape canvas is too narrow');
+    assert.ok(geometry.work.width>0&&geometry.work.height>0,layout.name+' Paint workspace must be visible');
+    assert.ok(geometry.tools.height>=40&&geometry.layers.height>=40,layout.name+' Paint dock controls should be touch sized');
+    assert.ok(geometry.viewport.width>=geometry.work.width*.98,layout.name+' Paint viewport should use full width');
+    assert.ok(geometry.viewport.height>=geometry.work.height*.98,layout.name+' Paint viewport should use full height');
+    assert.equal(geometry.background,'rgb(255, 255, 255)',layout.name+' Paint background must be white');
+    assert.equal(await phonePage.locator('#paintLayersPanel').isVisible(),false,'Layers should remain hidden until requested');
+    await phonePage.locator('#androidPaintToolsToggle').tap();
+    assert.ok(await phonePage.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')));
+    assert.ok(await phonePage.locator('#paintFit').isVisible());
+    await phonePage.locator('.android-paint-sheet-head button').tap();
+    await phonePage.locator('#androidPaintLayersToggle').tap();
+    assert.ok(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-layers-open')));
+    assert.ok(await phonePage.locator('#paintLayersPanel').isVisible());
+    await phonePage.locator('.android-paint-layers-close').tap();
+    assert.equal(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-layers-open')),false);
+    if(layout.orientation==='landscape'){
       const menu=phonePage.locator('#mobileMenuBtn');
-      assert.ok(await menu.isVisible(),'Landscape Android menu must remain reachable');
+      assert.ok(await menu.isVisible(),'Android menu should remain reachable in landscape');
       await menu.tap();
-      assert.ok(await phonePage.locator('#sidebar').evaluate(el=>el.classList.contains('open')),'Landscape navigation drawer did not open');
+      assert.ok(await phonePage.locator('#sidebar').evaluate(el=>el.classList.contains('open')),'Android navigation drawer should open');
       await menu.tap();
       assert.equal(await phonePage.locator('#sidebar').evaluate(el=>el.classList.contains('open')),false);
     }
-    const toolbarToggle=phonePage.locator('#paintToolbarToggle');
-    await toolbarToggle.tap();
-    assert.ok(await phonePage.locator('#paintToolbar').evaluate(el=>el.classList.contains('paint-toolbar-collapsed')),'Paint toolbar did not collapse on touch');
-    await toolbarToggle.tap();
-    assert.equal(await phonePage.locator('#paintToolbar').evaluate(el=>el.classList.contains('paint-toolbar-collapsed')),false);
-    const layersToggle=phonePage.locator('#paintLayersToggle');
-    await layersToggle.tap();
-    assert.ok(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('paint-layers-collapsed')),'Paint layers panel did not collapse on touch');
-    await phonePage.locator('#paintLayersReopen').tap();
-    assert.equal(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('paint-layers-collapsed')),false);
+    await phonePage.locator('#androidPaintToolsToggle').tap();
     await phonePage.locator('#paintFit').tap();
+    await phonePage.locator('.android-paint-sheet-head button').tap();
     assert.deepEqual(phoneErrors,[],layout.name+' runtime errors: '+phoneErrors.join(' | '));
-    pass('Android '+layout.name+' responsive layout and Paint controls',JSON.stringify({tabs,geometry}));
+    pass('Android '+layout.name+' full-canvas layout and Paint drawers',JSON.stringify({tabs,geometry}));
     await context.close();
   }
 
