@@ -154,32 +154,70 @@ try {
 
   await page.locator('#tabPaint').click();
   await page.waitForFunction(()=>document.querySelector('#panePaint').classList.contains('active'));
-  const tools=page.locator('#androidPaintTools');
-  await tools.waitFor({state:'visible',timeout:5000});
-  assert.equal(await tools.evaluate(el=>el.open),false);
-  await tools.locator('summary').click();
-  assert.equal(await tools.evaluate(el=>el.open),true);
-  const toolPicker=page.locator('#androidPaintTool');
-  const toolOptions=await toolPicker.locator('option').evaluateAll(ns=>ns.map(n=>n.value));
-  assert.ok(toolOptions.length>=2,'Brush picker has fewer than two tools');
-  const currentTool=await page.locator('#paintTool').inputValue();
+  const toolsToggle=page.locator('#androidPaintToolsToggle');
+  await toolsToggle.waitFor({state:'visible',timeout:5000});
+  await toolsToggle.tap();
+  assert.ok(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')));
+  const sourceTool=page.locator('#paintTool');
+  const toolOptions=await sourceTool.locator('option').evaluateAll(ns=>ns.map(n=>n.value));
+  assert.ok(toolOptions.length>=8,'All existing Paint tools must remain available');
+  const currentTool=await sourceTool.inputValue();
   const nextTool=toolOptions.find(v=>v!==currentTool);
-  await toolPicker.selectOption(nextTool);
-  assert.equal(await page.locator('#paintTool').inputValue(),nextTool,'Brush selection did not update the real tool');
+  await sourceTool.selectOption(nextTool);
+  assert.equal(await sourceTool.inputValue(),nextTool);
   const currentColor=await page.locator('#paintColor').inputValue();
   const nextColor=currentColor==='#202124'?'#db2777':'#202124';
-  await page.locator('#androidPaintColor').evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));},nextColor);
+  await page.locator('#paintColor').evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));},nextColor);
   assert.equal(await page.locator('#paintColor').inputValue(),nextColor);
-  const sizePicker=page.locator('#androidPaintSize');
-  const currentSize=Number(await page.locator('#paintSize').inputValue());
-  const min=Number(await sizePicker.getAttribute('min')||1),max=Number(await sizePicker.getAttribute('max')||24);
+  const sizePicker=page.locator('#paintSize');
+  const currentSize=Number(await sizePicker.inputValue()),min=Number(await sizePicker.getAttribute('min')||1),max=Number(await sizePicker.getAttribute('max')||64);
   const nextSize=String(currentSize<max?currentSize+1:Math.max(min,currentSize-1));
   await sizePicker.evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));},nextSize);
-  assert.equal(await page.locator('#paintSize').inputValue(),nextSize);
-  assert.ok(await page.locator('#androidPaintUndo').isVisible());
-  assert.ok(await page.locator('#androidPaintRedo').isVisible());
-  pass('Paint accordion, brush, color, brush size, undo and redo');
+  assert.equal(await sizePicker.inputValue(),nextSize);
+  assert.ok(await page.locator('#paintUndo').isVisible());
+  assert.ok(await page.locator('#paintRedo').isVisible());
+  await page.locator('.android-paint-sheet-head button').tap();
+  assert.equal(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),false);
+  await page.locator('#androidPaintLayersToggle').tap();
+  assert.ok(await page.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-layers-open')));
+  assert.ok(await page.locator('#paintLayersPanel').isVisible());
+  await page.locator('.android-paint-layers-close').tap();
+  assert.equal(await page.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-layers-open')),false);
+  await page.locator('#androidPaintObjectsToggle').tap();
+  assert.ok(await page.locator('#paintLayersPanel').isVisible(),'Objects button should open the existing layer/object drawer');
+  await page.locator('.android-paint-layers-close').tap();
+  pass('Paint tools/layers/objects drawers, full tool list, color, size, undo and redo');
 
+  const initialPaintTheme=await page.locator('body').getAttribute('data-theme');
+  const paintExportCheck=async()=>page.evaluate(async()=>{
+    const board=document.querySelector('#paintBoard'),view=getComputedStyle(board).backgroundColor;
+    const state=window.GuioneroStudio.exportState(),active=state.boards.find(b=>b.id===state.activeBoard);
+    const [full,layer]=await Promise.all([
+      window.GuioneroStudio.composePaintBoard(),
+      window.GuioneroStudio.composePaintLayer(active.activeLayerId)
+    ]);
+    const rgba=async(src)=>{
+      const img=new Image();img.src=src;await img.decode();
+      const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
+      const x=c.getContext('2d');x.drawImage(img,0,0);
+      return [...x.getImageData(0,0,1,1).data];
+    };
+    return {view,backgroundColor:active.backgroundColor,fullPixel:await rgba(full),layerPixel:await rgba(layer)};
+  });
+  const lightWhite=await paintExportCheck();
+  assert.equal(lightWhite.view,'rgb(255, 255, 255)','Paint display should have a white canvas');
+  assert.equal(lightWhite.backgroundColor,'#ffffff');
+  assert.deepEqual(lightWhite.fullPixel,[255,255,255,255],'Full Paint export should have a white background');
+  assert.equal(lightWhite.layerPixel[3],0,'Layer-only export must keep transparent pixels');
+  await page.locator('#themeBtn').click();
+  await page.waitForTimeout(100);
+  const darkWhite=await paintExportCheck();
+  assert.equal(darkWhite.view,'rgb(255, 255, 255)','Paint must stay white in dark theme');
+  assert.deepEqual(darkWhite.fullPixel,[255,255,255,255]);
+  assert.equal(darkWhite.layerPixel[3],0,'Dark mode must not flatten transparent layer exports');
+  if(initialPaintTheme==='light')await page.locator('#themeBtn').click();
+  pass('Paint canvas stays white in light/dark themes; full export is white and layer export keeps alpha');
+  
   const paintCdp=await mobile.newCDPSession(page);
   async function canvasHash() {
     return page.locator('#paintCanvas').evaluate(el=>{
