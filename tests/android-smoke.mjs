@@ -366,6 +366,7 @@ try {
   assert.equal(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),false,'Closing Paint drawer should remove its open state');
   pass('Paint one-finger object move/resize and safe two-finger gesture takeover');
 
+  const transformBeforeDraw=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
   const cr=await page.locator('#paintCanvas').evaluate(el=>{
     const r=el.getBoundingClientRect(),v=document.querySelector('#paintViewport').getBoundingClientRect();
     const left=Math.max(r.left,v.left),top=Math.max(r.top,v.top),right=Math.min(r.right,v.right),bottom=Math.min(r.bottom,v.bottom);
@@ -410,7 +411,7 @@ try {
   const hashAfterRedo=await canvasHash();
   assert.equal(hashAfterRedo,hashAfterDraw,'Redo should restore the drawn state');
   const transformAfterDraw=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
-  assert.equal(transformAfterDraw,paintAfterPinch,'One-finger drawing should not move the canvas');
+  assert.equal(transformAfterDraw,transformBeforeDraw,'One-finger drawing should not move the canvas from its immediately preceding view');
   pass('Paint pinch does not draw; one-finger draw, undo and redo work',paintBefore+' -> '+paintAfterPinch+'; canvas '+hashBeforePinch+' -> '+hashAfterPinch+' -> '+hashAfterDraw+' -> undo '+hashAfterUndo+' -> redo '+hashAfterRedo);
   const zoomBefore=await page.evaluate(()=>window.GuioneroStudio.getPaintView().zoom);
   await page.locator('#androidPaintZoomIn').tap();
