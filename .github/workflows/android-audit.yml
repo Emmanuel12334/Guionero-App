@@ -2,7 +2,7 @@ name: Android mobile regression audit
 
 on:
   push:
-    branches: ["main", "android-review", "android-phone-layout-pass"]
+    branches: ["main", "android-review", "android-phone-layout-pass", "android-complete-mobile-20261030"]
   workflow_dispatch:
 
 permissions:
@@ -15,6 +15,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Capture pre-update desktop baseline from main
+        run: |
+          git fetch origin main --depth=1
+          git show origin/main:index.html > /tmp/guionero-desktop-baseline.html
+          test -s /tmp/guionero-desktop-baseline.html
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -27,3 +32,5 @@ jobs:
         run: npm run check --if-present
       - name: Run Android touch and desktop regression suite
         run: node tests/android-smoke.mjs
+        env:
+          GUIONERO_DESKTOP_BASELINE: /tmp/guionero-desktop-baseline.html
