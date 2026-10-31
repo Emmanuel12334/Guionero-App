@@ -143,9 +143,17 @@ async function testPaintText(page, label, useTouch) {
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('role')), 'textbox', label + ': cursor focused in new text box');
   await textBox.fill('Primera línea\nSegunda línea');
   await page.evaluate(() => document.activeElement?.blur());
+  if (useTouch) {
+    await touchTap(page, '#androidPaintToolsToggle');
+    await page.waitForFunction(() => document.getElementById('paintToolbar')?.classList.contains('android-paint-tools-open'));
+  }
   await page.locator('#paintTextAlign').selectOption('center');
   await page.locator('#paintFontSize').fill('48');
   await page.locator('#paintFontSize').press('Tab');
+  if (useTouch) {
+    await touchTap(page, '#androidPaintToolsToggle');
+    await page.waitForFunction(() => !document.getElementById('paintToolbar')?.classList.contains('android-paint-tools-open'));
+  }
   const stateBefore = await page.evaluate(() => {
     const state = window.GuioneroStudio.exportState(), board = state.boards.find(b => b.id === state.activeBoard);
     const object = board?.objects.find(o => o.kind === 'text');
