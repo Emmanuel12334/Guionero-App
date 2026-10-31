@@ -3061,16 +3061,26 @@ body.android-device #paintToolbar.android-paint-tools-open {
   position:absolute;top:8px;left:8px;right:8px;
   bottom:calc(var(--android-nav-height) + var(--android-safe-bottom) + 74px);
   z-index:75;display:flex!important;flex-direction:column;align-items:stretch;
-  flex-wrap:nowrap;max-height:none!important;overflow:auto;overscroll-behavior:contain;
+  flex-wrap:nowrap;max-height:none!important;min-height:0;overflow:hidden;overscroll-behavior:contain;
   padding:9px;border:1px solid var(--line);border-radius:13px;
   background:var(--panel);box-shadow:0 14px 40px rgba(0,0,0,.25);
 }
 body.android-device #paintToolbar.android-paint-tools-open .paint-toolbar-content,
 body.android-device #paintToolbar.android-paint-tools-open.paint-toolbar-collapsed .paint-toolbar-content {
-  display:flex!important;flex-wrap:wrap;align-items:center;gap:7px;
-  max-height:none!important;overflow:visible;
+  display:flex!important;flex:1 1 0;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;
+  gap:7px;width:100%;min-width:0;min-height:0;max-height:none!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
 }
 body.android-device #paintToolbar .paint-toolbar-content > * {min-width:0}
+body.android-device #paintToolbar .paint-toolbar-content > button,
+body.android-device #paintToolbar .paint-toolbar-content > select {
+  flex:0 1 auto;max-width:100%;white-space:normal;
+}
+body.android-device #paintToolbar .paint-toolbar-content #paintUndo,
+body.android-device #paintToolbar .paint-toolbar-content #paintRedo {
+  display:inline-flex!important;visibility:visible!important;min-width:46px;min-height:44px;
+}
 body.android-device #paintToolbar .paint-toolbar-content #paintUndo,
 body.android-device #paintToolbar .paint-toolbar-content #paintRedo,
 body.android-device #paintToolbar .paint-toolbar-content #paintImport {
