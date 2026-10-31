@@ -47,12 +47,13 @@ async function testParenthetical(page, label) {
   await line.click();
   await page.keyboard.press('Tab');
   await page.locator('#picker [data-pick="PARENTHETICAL"]').click();
+  const parenthetical = page.locator('#script .script-line[data-type="PARENTHETICAL"]').last();
   await page.keyboard.type('tembloroso');
   // The tool starts with (), so a manually typed closing bracket must only move the caret.
   await page.keyboard.press(')');
-  assert.equal(await line.textContent(), '(tembloroso)', label + ': no debe duplicar el paréntesis de cierre');
+  assert.equal(await parenthetical.textContent(), '(tembloroso)', label + ': no debe duplicar el paréntesis de cierre');
   await page.keyboard.press('Enter');
-  const result = await line.evaluate(el => ({
+  const result = await parenthetical.evaluate(el => ({
     text: el.textContent,
     type: el.dataset.type,
     nextText: el.nextElementSibling?.textContent ?? null,
