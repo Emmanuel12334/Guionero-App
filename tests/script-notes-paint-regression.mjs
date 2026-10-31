@@ -77,6 +77,8 @@ try {
   assert.equal(await page.locator('#picker .history-option').count(),2);
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Enter');
+  await page.waitForTimeout(100);
+  console.log('AFTER HISTORY ENTER:',JSON.stringify(await page.evaluate(()=>({url:location.href,activeTag:document.activeElement?.tagName,activeClass:document.activeElement?.className,bodyText:document.querySelector('#script')?.innerText,open:document.querySelector('#picker')?.classList.contains('visible')}))));
   assert.equal((await activeLine()).innerText(),'EXT. PARQUE - TARDE');
   console.log('PASS: scene suggestions navigate with arrows and select with Enter');
 
