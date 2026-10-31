@@ -187,8 +187,9 @@ try {
   const nextSize=String(currentSize<max?currentSize+1:Math.max(min,currentSize-1));
   await sizePicker.evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));},nextSize);
   assert.equal(await sizePicker.inputValue(),nextSize);
-  assert.ok(await page.locator('#paintUndo').isVisible());
-  assert.ok(await page.locator('#paintRedo').isVisible());
+  await page.locator('#paintUndo').scrollIntoViewIfNeeded();
+  assert.ok(await page.locator('#paintUndo').isVisible(),'Undo should remain reachable inside the scrollable Paint tool drawer');
+  assert.ok(await page.locator('#paintRedo').isVisible(),'Redo should remain reachable inside the scrollable Paint tool drawer');
   await page.locator('.android-paint-sheet-head button').tap();
   assert.equal(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),false);
   await page.locator('#androidPaintLayersToggle').tap();
