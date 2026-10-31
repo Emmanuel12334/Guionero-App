@@ -696,7 +696,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
   const $ = id => document.getElementById(id);
   const script = $('script'), picker = $('picker'), workspace = $('workspace');
   let activeLine = null, isLoading = false, toastTimer = null, pendingEnter = null;
-  let historyPopup = null, historyActiveIndex = 0, historyItems = [];
+  let historyPopup = null, historyActiveIndex = -1, historyItems = [];
   let applyingRemote = false, syncReady = false, syncSession = null, syncConfig = null;
   let cloudSaveTimer = null, cloudPollTimer = null, lastCloudTimestamp = 0, clientId = localClientId();
   let localEditVersion = 0, cloudWriteInFlight = false, cloudWriteQueued = false;
@@ -793,8 +793,8 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
   function onEditorKeydown(event) {
     const el=selectionLine();
     if(historyPopup&&!historyPopup.hidden){const opts=[...historyPopup.querySelectorAll('[data-history-index]')];
-      if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();if(opts.length){historyActiveIndex=(historyActiveIndex+(event.key==='ArrowDown'?1:-1)+opts.length)%opts.length;opts.forEach((b,i)=>b.classList.toggle('active',i===historyActiveIndex));}return;}
-      if(event.key==='Enter'&&opts.length){event.preventDefault();applyHistorySuggestion(historyItems[historyActiveIndex]);return;}
+      if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();if(opts.length){historyActiveIndex=historyActiveIndex<0?(event.key==='ArrowDown'?0:opts.length-1):(historyActiveIndex+(event.key==='ArrowDown'?1:-1)+opts.length)%opts.length;opts.forEach((b,i)=>{b.classList.toggle('active',i===historyActiveIndex);b.setAttribute('aria-selected',String(i===historyActiveIndex));});}return;}
+      if(event.key==='Enter'&&opts.length){if(historyActiveIndex>=0&&historyActiveIndex<opts.length){event.preventDefault();applyHistorySuggestion(historyItems[historyActiveIndex]);return;}closeHistorySuggestions();}
       if(event.key==='Escape'){event.preventDefault();closeHistorySuggestions();if(el)focusLine(el,true);return;}
       if(event.key==='Tab')closeHistorySuggestions();else if(!event.ctrlKey&&!event.metaKey&&!event.altKey&&(event.key.length===1||event.key==='Backspace'||event.key==='Delete'))closeHistorySuggestions();
     }
@@ -934,14 +934,14 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
     afterEdit();
   }
   function closePicker() { picker.classList.remove('visible'); }
-  function closeHistorySuggestions(){if(historyPopup){historyPopup.hidden=true;historyPopup.classList.remove('visible');historyPopup.replaceChildren();}historyItems=[];historyActiveIndex=0;}
+  function closeHistorySuggestions(){if(historyPopup){historyPopup.hidden=true;historyPopup.classList.remove('visible');historyPopup.replaceChildren();}historyItems=[];historyActiveIndex=-1;}
   function applyHistorySuggestion(value){const line=activeLine&&script.contains(activeLine)?activeLine:selectionLine();if(!line||!value)return;line.textContent=String(value);closeHistorySuggestions();focusLine(line,true);afterEdit();}
   function showHistorySuggestions(type){
     closeHistorySuggestions();const history=window.GuioneroStudio?.getScriptHistory?.()||{},source=type==='SCENE'?history.scenes:history.characters;
-    const values=(Array.isArray(source)?source:[]).slice().reverse().filter(v=>String(v||'').trim()).slice(0,10);if(!values.length)return;historyItems=values;historyActiveIndex=0;
+    const values=(Array.isArray(source)?source:[]).slice().reverse().filter(v=>String(v||'').trim()).slice(0,10);if(!values.length)return;historyItems=values;historyActiveIndex=-1;
     if(!historyPopup){historyPopup=document.createElement('div');historyPopup.id='historySuggestionPopup';historyPopup.className='history-suggestions';historyPopup.hidden=true;document.body.appendChild(historyPopup);}
     const heading=document.createElement('div');heading.className='history-suggestions-title';heading.textContent=type==='SCENE'?'Escenas utilizadas en este proyecto':'Personajes utilizados en este proyecto';historyPopup.appendChild(heading);
-    values.forEach((value,index)=>{const b=document.createElement('button');b.type='button';b.className='history-suggestion'+(index===0?' active':'');b.dataset.historyIndex=String(index);b.setAttribute('role','option');b.textContent=String(value);b.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();applyHistorySuggestion(value);});historyPopup.appendChild(b);});
+    values.forEach((value,index)=>{const b=document.createElement('button');b.type='button';b.className='history-suggestion';b.dataset.historyIndex=String(index);b.setAttribute('role','option');b.setAttribute('aria-selected','false');b.textContent=String(value);b.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;e.preventDefault();e.stopPropagation();applyHistorySuggestion(value);});historyPopup.appendChild(b);});
     const rect=activeLine?.getBoundingClientRect?.(),width=Math.min(300,window.innerWidth-24);if(rect){historyPopup.style.width=width+'px';historyPopup.style.left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12))+'px';historyPopup.style.top=Math.max(12,Math.min(rect.bottom+6,window.innerHeight-190))+'px';}
     historyPopup.hidden=false;historyPopup.classList.add('visible');
   }
@@ -1164,7 +1164,6 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
   function setSyncStatus(message, connected=syncReady) {
     $('syncModalStatus').textContent=message;
     $('syncStatusDot').classList.toggle('connected',!!connected);
-    $('saveStatus').textContent=connected ? message : (message==='Sin conexión a la nube'?(window.__guioneroStorageFallback?'Solo esta sesión · exporta antes de cerrar':'Guardado en este dispositivo'):message);
     $('syncDisconnectBtn').hidden=!syncSession;
   }
   function openSyncModal() {
@@ -1296,7 +1295,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
     try { window.__guioneroSafeStorage.setItem(STORAGE_KEY,JSON.stringify({...state,blocks:blockData()})); } catch(e) {}
     if(remote.studio&&window.GuioneroStudio?.importState){try{window.GuioneroStudio.importState(remote.studio,{notifyCloud:false});}catch(e){showToast('El guion se sincronizó, pero el espacio Node remoto no pudo restaurarse.');}}
     isLoading=false; applyingRemote=false;
-    $('saveStatus').textContent='Actualizado desde la nube';
+    window.GuioneroSetSaveIndicator?.('dirty','No guardado');window.dispatchEvent(new CustomEvent('guionero-script-dirty'));
   }
   function scheduleCloudSave() {
     if(!syncReady || applyingRemote || window.__guioneroProjectSwitchInProgress) return;
@@ -1381,7 +1380,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
       state.blocks=blockData();
       try{state.studio=window.GuioneroStudio?.exportState?.()||null;}catch(_){state.studio=null;}
       applyTheme();refreshNavigation();refreshStats();
-      try{window.__guioneroSafeStorage.setItem(STORAGE_KEY,JSON.stringify({...state,blocks:blockData()}));}catch(_){$('saveStatus').textContent='No se pudo guardar el estado local';}
+      try{window.__guioneroSafeStorage.setItem(STORAGE_KEY,JSON.stringify({...state,blocks:blockData()}));}catch(_){window.GuioneroSetSaveIndicator?.('error','No guardado');}
     }finally{isLoading=false;}
   }};
   window.addEventListener('guionero-script-rendered',()=>{refreshNavigation();refreshStats();saveState();});
@@ -1680,8 +1679,8 @@ function renderScriptFromViewer(){
   script.dispatchEvent(new Event('input',{bubbles:true}));
  }finally{renderingScript=false;window.__guioneroStudioRenderingScript=false;}
  restoreStudioScriptCaret(script,caretSnapshot);window.dispatchEvent(new CustomEvent('guionero-script-rendered'));
- if(!flow.valid&&flow.reason==='El Viewer no está conectado')$('saveStatus').textContent='Viewer desconectado · texto de páginas conservado';
- else if(!flow.pages.length)$('saveStatus').textContent='Viewer sin contenido visible · páginas conservadas';
+ if(!flow.valid&&flow.reason==='El Viewer no está conectado')$('projectLibraryStatus').textContent='Viewer desconectado · texto de páginas conservado';
+ else if(!flow.pages.length)$('projectLibraryStatus').textContent='Viewer sin contenido visible · páginas conservadas';
  persist();
 }
 function actualScriptPageHeight(){const paper=$('paper');if(!paper)return 1122;const value=getComputedStyle(paper).backgroundSize||'';const sizes=value.match(/[0-9]+(?:\.[0-9]+)?px/g)||[];const px=sizes.length?parseFloat(sizes[sizes.length-1]):0;return px>300?px:(window.innerWidth<=760?900:1122);}
@@ -2128,9 +2127,9 @@ for(const im of model.images)position(im.id,{x:80+model.images.indexOf(im)*235,y
 position('viewer',{x:Math.max(650,(model.pages.length%3)*300+70),y:Math.max(160,Math.ceil(model.pages.length/3)*245)});
 zoom=model.camera.zoom||.8;pan={...(model.camera.pan||{x:55,y:50})};
 $('noteImport').textContent='＋ Importar imagen';$('paneNote').setAttribute('aria-label','Espacio de nodos Node');
-if(needsIdbHydration){const st=$('saveStatus');if(st)st.textContent='Restaurando dibujos desde almacenamiento extendido…';window.GuioneroStudioBooting=false;loadFullStateFromIndexedDB().then(raw=>{if(!raw){needsIdbHydration=false;loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();if(st)st.textContent='Nuevo proyecto local';toast('No había copia extendida previa; se abrió un proyecto local nuevo.');return;}importStudioState(raw,{notifyCloud:false});needsIdbHydration=false;toast('Dibujos y capas restaurados desde almacenamiento extendido.');}).catch(err=>{if(st)st.textContent='Error al restaurar dibujos';loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();toast('No se pudo restaurar la copia extendida. Comprueba permisos de almacenamiento y recupera una exportación si existe. '+(err?.message||''));});}
+if(needsIdbHydration){window.__guioneroStudioHydrating=true;window.GuioneroSetSaveIndicator?.('dirty','No guardado');window.GuioneroStudioBooting=false;loadFullStateFromIndexedDB().then(raw=>{if(!raw){needsIdbHydration=false;window.__guioneroStudioHydrating=false;loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();window.GuioneroSetSaveIndicator?.('error','No guardado');toast('No había copia extendida previa; se abrió un proyecto local nuevo.');return;}importStudioState(raw,{notifyCloud:false});needsIdbHydration=false;window.__guioneroStudioHydrating=false;toast('Dibujos y capas restaurados desde almacenamiento extendido.');}).catch(err=>{window.__guioneroStudioHydrating=false;window.GuioneroSetSaveIndicator?.('error','No guardado');loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();toast('No se pudo restaurar la copia extendida. Comprueba permisos de almacenamiento y recupera una exportación si existe. '+(err?.message||''));});}
 else{loadBoard();applyPaintCamera();renderNote();renderScriptFromViewer();persist();window.GuioneroStudioBooting=false;}
-if(window.__guioneroStorageFallback){const st=$('saveStatus');if(st){st.textContent='Solo esta sesión · exporta antes de cerrar';st.title='El navegador bloqueó el almacenamiento persistente. Exporta el proyecto antes de cerrar.';st.classList.add('storage-temporary');}setTimeout(()=>toast('El navegador bloqueó el almacenamiento persistente. Guionero funciona en esta sesión, pero debes exportar el proyecto antes de cerrar.'),650);}
+if(window.__guioneroStorageFallback){window.GuioneroSetSaveIndicator?.('error','No guardado');setTimeout(()=>toast('El navegador bloqueó el almacenamiento persistente. Guionero funciona en esta sesión, pero debes exportar el proyecto antes de cerrar.'),650);}
 
 if(window.__guioneroAndroidTouchDevice===true){
 {
@@ -2272,7 +2271,7 @@ async function activateProjectInMemory(project,id){
   if(window.localStorage.getItem(ACTIVE_KEY)!==normalized.id)throw new Error('El identificador del proyecto activo no coincide con el proyecto que se está cargando.');
   window.GuioneroScriptProjectAPI?.syncAfterProjectSwitch(normalized.localState||{},normalized.title,normalized.theme);
   await flushStudioPersistence();
-  dirty=false;await refreshLibrary();renderSelect(normalized.id);status('Proyecto activo: '+(normalized.title||'Guion'));
+  dirty=false;lastSuccessfulSaveAt=Date.now();window.GuioneroSetSaveIndicator?.('saved','Guardado');await refreshLibrary();renderSelect(normalized.id);status('Proyecto activo: '+(normalized.title||'Guion'));
  }finally{window.__guioneroProjectSwitchInProgress=wasSwitching;}
 }
 function markCloudBindingBeforeSwitch(previousId){if(previousId&&!window.__guioneroSafeStorage.getItem('guionero_cloud_bound_project_id'))window.__guioneroSafeStorage.setItem('guionero_cloud_bound_project_id',previousId);}
@@ -2300,13 +2299,14 @@ async function applyProjectToStorage(project,activeId){
 }
 async function saveCurrent(force=false){
  clearTimeout(saveTimer);saveTimer=null;const id=window.__guioneroSafeStorage.getItem(ACTIVE_KEY)||makeId('project'),savedVersion=changeVersion,existing=libraryCache.find(p=>p.id===id),snap=currentSnapshot(id);
- if(!force&&existing&&snapshotContentKey(snap)===snapshotContentKey(existing)){if(changeVersion===savedVersion){dirty=false;lastSuccessfulSaveAt=Date.now();window.GuioneroSetSaveIndicator?.('saved','Guardado');status('');}return existing;}
+ if(!force&&existing&&snapshotContentKey(snap)===snapshotContentKey(existing)){if(changeVersion===savedVersion){dirty=!setConfirmedSaveState();lastSuccessfulSaveAt=Date.now();status('');}return existing;}
  snap.createdAt=existing?.createdAt||snap.createdAt;snap.updatedAt=Date.now();await flushStudioPersistence();
  try{await dbPut(snap);}catch(e){if(!saveFallback(snap))throw new Error('No se pudo guardar el proyecto en IndexedDB ni en el almacenamiento alternativo. El proyecto activo no se ha cambiado. '+(e?.message||e));}
  if(snap.studio?.scriptHistory&&window.GuioneroStudio?.setScriptHistory){capturingSnapshot=true;try{window.GuioneroStudio.setScriptHistory(snap.studio.scriptHistory,true);}finally{capturingSnapshot=false;}}
  lastSuccessfulSaveAt=Date.now();await refreshLibrary();renderSelect(id);
- if(changeVersion===savedVersion){dirty=false;window.GuioneroSetSaveIndicator?.('saved','Guardado');status('');}else{dirty=true;window.GuioneroSetSaveIndicator?.('dirty','No guardado');}return snap;
+ if(changeVersion===savedVersion){dirty=!setConfirmedSaveState();status('');}else{dirty=true;window.GuioneroSetSaveIndicator?.('dirty','No guardado');}return snap;
 }
+function setConfirmedSaveState(){const temporary=!!window.__guioneroStorageFallback;window.GuioneroSetSaveIndicator?.(temporary?'error':'saved',temporary?'No guardado':'Guardado');return !temporary;}
 function scheduleSave(){if(switchingProject||window.GuioneroStudioBooting)return;dirty=true;changeVersion++;window.GuioneroSetSaveIndicator?.('dirty','No guardado');status('');}
 async function saveProjectManually(){const button=$('projectSaveBtn');if(button?.disabled)return;try{if(button)button.disabled=true;window.GuioneroSaveScriptState?.();await libraryReady;await saveCurrent(true);toast('Proyecto guardado correctamente.');}catch(e){status('Error de guardado',true);window.GuioneroSetSaveIndicator?.('error','No guardado');toast('No se pudo guardar el proyecto: '+(e?.message||e));}finally{if(button)button.disabled=false;}}
 window.GuioneroSaveProject=saveProjectManually;$('projectSaveBtn')?.addEventListener('click',saveProjectManually);
@@ -2354,7 +2354,7 @@ $('projectSaveAsBtn')?.addEventListener('click',saveAsFile);$('savedScriptsBrows
 if(oldNew&&!oldNew.dataset.safeNewProject){oldNew.dataset.safeNewProject='1';oldNew.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();if(oldNew.dataset.creatingProject==='1')return;oldNew.dataset.creatingProject='1';createNewProject().finally(()=>{if(!switchingProject){oldNew.dataset.creatingProject='0';oldNew.disabled=false;}});},true);}
 const emergencySave=()=>{if(dirty&&!switchingProject){try{const snap=currentSnapshot(window.__guioneroSafeStorage.getItem(ACTIVE_KEY));saveFallback(snap);}catch(_){}}};
 window.addEventListener('beforeunload',emergencySave);window.addEventListener('pagehide',emergencySave);
-libraryReady=initLibrary().then(result=>{lastSuccessfulSaveAt=Date.now();window.GuioneroSetSaveIndicator?.('saved','Guardado');return result;});
+libraryReady=initLibrary().then(result=>{lastSuccessfulSaveAt=Date.now();const failed=$('projectLibraryStatus')?.classList.contains('error');if(failed||window.__guioneroStorageFallback||window.__guioneroStudioHydrating){dirty=true;window.GuioneroSetSaveIndicator?.('error','No guardado');}else window.GuioneroSetSaveIndicator?.('saved','Guardado');return result;});
 window.setInterval(async()=>{if(!dirty||switchingProject||Date.now()-lastSuccessfulSaveAt<PROJECT_AUTOSAVE_MAX_AGE)return;try{await libraryReady;await saveCurrent();}catch(e){status('Error de guardado',true);window.GuioneroSetSaveIndicator?.('error','No guardado');toast('Falló el guardado automático: '+(e?.message||e));}},15000);
 })();
 </script>
