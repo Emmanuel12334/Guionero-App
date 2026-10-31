@@ -343,7 +343,8 @@ try {
   objectBox=await page.locator(objectSelector).boundingBox();
   const objectTouch={x:objectBox.x+objectBox.width/2,y:objectBox.y+objectBox.height/2};
   const viewportBox=await page.locator('#paintViewport').boundingBox();
-  const secondTouch={x:viewportBox.x+viewportBox.width-18,y:viewportBox.y+viewportBox.height-24};
+  // Place finger two on an empty canvas corner, above the floating dock (not on UI).
+  const secondTouch={x:viewportBox.x+viewportBox.width-22,y:viewportBox.y+22};
   const objectHashBefore=await canvasHash();
   await touch(paintCdp,'touchStart',[{id:53,...objectTouch}]);
   await touch(paintCdp,'touchMove',[{id:53,x:objectTouch.x+18,y:objectTouch.y+10}]);
