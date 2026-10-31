@@ -2844,5 +2844,484 @@ body.android-device #paintLayersPanel input[type="range"] {
 }
 </style>
 
+
+<style id="guionero-android-complete-style">
+body.android-device {
+  --android-nav-height:60px;
+  --android-safe-bottom:env(safe-area-inset-bottom,0px);
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior:none;
+}
+body.android-device,body.android-device .app {
+  height:100%;
+  height:100dvh;
+  min-height:0;
+  overflow:hidden;
+}
+body.android-device .app {width:100%}
+body.android-device .main {
+  width:100%;min-width:0;min-height:0;height:100%;
+  overflow:hidden;
+}
+body.android-device button:not(.node-port),
+body.android-device select,
+body.android-device input[type="color"],
+body.android-device input[type="number"] {min-height:44px}
+body.android-device input[type="range"] {min-height:40px;touch-action:pan-x}
+body.android-device .outline-button,
+body.android-device .icon-button {touch-action:manipulation}
+body.android-device .topbar {
+  min-height:58px;flex:0 0 auto;flex-wrap:nowrap;gap:8px;
+  padding:calc(7px + env(safe-area-inset-top,0px)) 10px 7px;
+}
+body.android-device .doc-heading {min-width:0;flex:1 1 auto}
+body.android-device .doc-eyebrow {display:none}
+body.android-device .doc-title {
+  width:100%;min-width:0;max-width:100%;height:40px;font-size:15px;
+}
+body.android-device .top-actions {
+  width:auto;flex:0 0 auto;gap:5px;justify-content:flex-end;
+}
+body.android-device .top-actions .stat-pill {display:none}
+body.android-device .top-actions .long-label {display:none!important}
+body.android-device .top-actions button {min-width:40px;min-height:42px;padding:6px 9px}
+body.android-device .mobile-menu {display:inline-flex!important}
+body.android-device .sidebar {
+  position:fixed;top:0;bottom:0;left:0;z-index:1001;
+  width:min(320px,88vw);max-width:88vw;height:100dvh;
+  transform:translateX(-105%);transition:transform .18s ease;
+  box-shadow:none;padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+body.android-device .sidebar.open {
+  transform:translateX(0);
+  box-shadow:0 0 0 100vmax rgba(0,0,0,.38);
+}
+body.android-device .studio-tabs {
+  position:fixed;left:0;right:0;bottom:0;z-index:1000;
+  display:flex!important;justify-content:stretch;align-items:stretch;
+  gap:6px;height:calc(var(--android-nav-height) + var(--android-safe-bottom));
+  padding:6px 8px calc(6px + var(--android-safe-bottom));
+  border-top:1px solid var(--line);border-bottom:0;
+  background:var(--panel);box-shadow:0 -6px 22px rgba(0,0,0,.08);
+}
+body.android-device .studio-tab {
+  display:inline-flex;flex:1 1 0;min-width:0;height:48px!important;
+  min-height:48px!important;padding:8px 5px;align-items:center;
+  justify-content:center;border-radius:11px;font-size:12px;
+  touch-action:manipulation;
+}
+body.android-device .studio-pane {
+  position:relative;min-width:0;min-height:0;overflow:hidden;
+  padding-bottom:calc(var(--android-nav-height) + var(--android-safe-bottom));
+}
+body.android-device .workspace {
+  min-height:0;min-width:0;flex:1 1 auto;overflow:auto;
+  overscroll-behavior:contain;padding:9px 8px 18px;
+}
+body.android-device .workspace-head {align-items:center;gap:8px;min-height:38px}
+body.android-device .workspace-head .workspace-caption {font-size:10px}
+body.android-device .workspace-head .autosave {min-width:0;font-size:10px}
+body.android-device #projectManagementDock.project-management-mobile {
+  max-height:30dvh;overflow:auto;margin:6px 0 8px;padding:8px;
+  border:1px solid var(--line);border-radius:10px;background:var(--panel);
+}
+body.android-device #projectManagementDock > .android-project-toggle {
+  width:100%;min-height:44px;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;margin:0;padding:8px 11px;
+  border:1px solid var(--line);border-radius:9px;background:var(--app);
+  color:var(--ink);font-weight:800;text-align:left;touch-action:manipulation;
+}
+body.android-device #projectManagementDock > .android-project-content[hidden],
+body.android-device #noteToolbarContent[hidden] {display:none!important}
+body.android-device #projectManagementDock .android-project-content {
+  display:flex;flex-direction:column;gap:7px;padding-top:8px;
+}
+body.android-device #projectManagementDock .script-project-toolbar {
+  display:flex;flex-direction:column;align-items:stretch;gap:7px;max-width:100%;
+}
+body.android-device #projectManagementDock .script-project-toolbar > * {max-width:100%}
+body.android-device #projectManagementDock .project-library-status {display:block}
+body.android-device #scriptFormatToolbar {gap:7px;align-items:center}
+body.android-device #scriptFormatToolbar button,
+body.android-device #scriptFormatToolbar input[type="color"] {min-width:42px;min-height:44px;touch-action:manipulation}
+body.android-device .android-script-format-details {
+  width:100%;margin:7px 0;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel);
+}
+body.android-device .android-script-format-details > summary {
+  min-height:44px;padding:11px 12px;font-weight:800;touch-action:manipulation;
+}
+body.android-device .android-script-format-details #scriptFormatToolbar {
+  display:flex;flex-wrap:wrap;padding:8px;border-top:1px solid var(--line);
+}
+body.android-device #paper {
+  width:100%;max-width:100%;min-height:0;margin:0;padding:14px 13px;border-radius:9px;
+}
+body.android-device #script {
+  min-height:max(52dvh,320px);padding-bottom:28px;font-size:16px;line-height:1.62;
+  caret-color:var(--accent);user-select:text;-webkit-user-select:text;
+  touch-action:pan-y;overscroll-behavior:contain;
+}
+body.android-device .editor-help {font-size:11px;line-height:1.45}
+body.android-device .android-script-focus-button {
+  min-height:40px;padding:6px 11px;white-space:nowrap;
+}
+body.android-device .android-script-restore {
+  display:none;position:fixed;top:calc(7px + env(safe-area-inset-top,0px));right:8px;
+  z-index:1200;min-height:42px;padding:7px 12px;border:1px solid var(--line);
+  border-radius:22px;background:var(--panel);color:var(--ink);
+  box-shadow:var(--shadow);touch-action:manipulation;
+}
+body.android-device.android-script-focus .topbar,
+body.android-device.android-script-focus #projectManagementDock,
+body.android-device.android-script-focus #viewerReconnectNotice,
+body.android-device.android-script-focus .workspace-head,
+body.android-device.android-script-focus .android-script-format-details,
+body.android-device.android-script-focus .editor-help,
+body.android-device.android-script-focus #scriptReferences {display:none!important}
+body.android-device.android-script-focus .workspace {padding:5px 5px 10px;overflow:auto}
+body.android-device.android-script-focus #paper {
+  min-height:calc(var(--android-visual-height,100dvh) - var(--android-nav-height) - var(--android-safe-bottom) - 10px);
+  padding:16px 13px 30px;border:0;border-radius:0;box-shadow:none;
+}
+body.android-device.android-script-focus #script {
+  min-height:calc(var(--android-visual-height,100dvh) - 130px);
+  font-size:17px;line-height:1.68;
+}
+body.android-device.android-script-focus .android-script-restore {
+  display:inline-flex;align-items:center;
+}
+body.android-device #paneNote {position:relative}
+body.android-device #paneNote .note-toolbar {
+  position:absolute;top:7px;left:8px;right:8px;z-index:45;
+  display:block;padding:0;border:0;background:transparent;overflow:visible;
+}
+body.android-device #noteToolbarToggle {
+  display:inline-flex;min-height:44px;align-items:center;justify-content:space-between;
+  gap:20px;padding:8px 12px;border:1px solid var(--line);border-radius:22px;
+  background:var(--panel);box-shadow:var(--shadow);font-weight:800;
+  touch-action:manipulation;
+}
+body.android-device #noteToolbarContent:not([hidden]) {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+  max-height:min(48dvh,430px);overflow:auto;overscroll-behavior:contain;
+  margin-top:7px;padding:9px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);box-shadow:var(--shadow);
+}
+body.android-device #noteToolbarContent > * {min-width:0;min-height:42px}
+body.android-device #noteCanvasWrap {
+  width:100%;min-width:0;min-height:0;touch-action:none;overscroll-behavior:contain;
+}
+body.android-device .note-inspector.open {
+  position:absolute;top:8px;left:8px;right:8px;bottom:8px;
+  width:auto;max-width:none;z-index:90;overflow:hidden;
+  border:1px solid var(--line);border-radius:13px;
+  box-shadow:0 0 0 100vmax rgba(0,0,0,.38),var(--shadow);
+}
+body.android-device .note-inspector .inspector-head {min-height:48px}
+body.android-device .note-inspector .inspector-content {
+  min-height:0;overflow:auto;overscroll-behavior:contain;
+  padding-bottom:calc(14px + var(--android-safe-bottom));
+}
+body.android-device .note-inspector textarea,
+body.android-device .note-inspector .node-page-editor {
+  min-height:min(54dvh,420px);font-size:16px;line-height:1.55;
+}
+body.android-device .note-inspector input,
+body.android-device .note-inspector select,
+body.android-device .note-inspector button {min-height:42px}
+body.android-device #panePaint {position:relative;overflow:hidden}
+body.android-device #paintToolbar {display:none!important}
+body.android-device #paintToolbar.android-paint-tools-open {
+  position:absolute;top:8px;left:8px;right:8px;
+  bottom:calc(var(--android-nav-height) + var(--android-safe-bottom) + 74px);
+  z-index:75;display:flex!important;flex-direction:column;align-items:stretch;
+  flex-wrap:nowrap;max-height:none!important;overflow:auto;overscroll-behavior:contain;
+  padding:9px;border:1px solid var(--line);border-radius:13px;
+  background:var(--panel);box-shadow:0 14px 40px rgba(0,0,0,.25);
+}
+body.android-device #paintToolbar.android-paint-tools-open .paint-toolbar-content,
+body.android-device #paintToolbar.android-paint-tools-open.paint-toolbar-collapsed .paint-toolbar-content {
+  display:flex!important;flex-wrap:wrap;align-items:center;gap:7px;
+  max-height:none!important;overflow:visible;
+}
+body.android-device #paintToolbar .paint-toolbar-content > * {min-width:0}
+body.android-device #paintToolbarToggle {display:none!important}
+body.android-device .android-paint-sheet-head {
+  position:sticky;top:-9px;z-index:4;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;min-height:44px;margin:-9px -9px 7px;
+  padding:6px 10px;border-bottom:1px solid var(--line);background:var(--panel);
+  font-weight:850;
+}
+body.android-device .android-paint-sheet-head button {
+  min-width:40px;min-height:40px;border:1px solid var(--line);border-radius:50%;
+  background:var(--app);color:var(--ink);font-size:19px;
+}
+body.android-device #paintWorkarea {
+  position:relative;flex:1 1 0;min-width:0;min-height:0;width:100%;
+  overflow:hidden;touch-action:none;overscroll-behavior:contain;background-color:var(--app);
+}
+body.android-device #paintLayersPanel {display:none!important}
+body.android-device #paintWorkarea.android-paint-layers-open #paintLayersPanel {
+  position:absolute!important;top:8px;right:8px;bottom:8px;left:auto;
+  z-index:85;display:flex!important;flex:none;flex-direction:column;
+  width:min(88vw,360px);max-width:88vw;height:auto;max-height:none!important;
+  min-height:0;overflow:auto;overscroll-behavior:contain;padding:9px;
+  border:1px solid var(--line);border-radius:13px;background:var(--panel);
+  box-shadow:0 14px 40px rgba(0,0,0,.3);
+}
+body.android-device #paintLayersPanel > header {
+  position:sticky;top:-9px;z-index:3;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;min-height:46px;padding:4px 3px 8px;
+  background:var(--panel);border-bottom:1px solid var(--line);
+}
+body.android-device #paintLayersToggle,
+body.android-device #paintLayersReopen {display:none!important}
+body.android-device .android-paint-layers-close {
+  min-width:40px;min-height:40px;border:1px solid var(--line);
+  border-radius:50%;background:var(--app);color:var(--ink);font-size:18px;
+}
+body.android-device #paintLayersPanel .paint-layer-actions {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;
+}
+body.android-device #paintLayersPanel .paint-layer-actions button,
+body.android-device #paintLayersPanel .paint-object-actions button,
+body.android-device #paintLayersPanel .paint-layer-row button {
+  min-width:0;min-height:42px;padding:6px 4px;font-size:11px;touch-action:manipulation;
+}
+body.android-device #paintLayersPanel .paint-layer-row {min-height:42px;touch-action:manipulation}
+body.android-device #paintLayersPanel input[type="range"] {min-height:40px}
+body.android-device #paintLayersPanel #androidPaintTools {display:none!important}
+body.android-device #paintLayersPanel #paintObjectInspector {
+  margin-top:10px;padding:9px;border:1px solid var(--line);
+  border-radius:10px;background:var(--app);
+}
+body.android-device #paintLayersPanel #paintObjectInspector[hidden] {display:none!important}
+body.android-device #paintViewport {
+  position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0;
+  overflow:hidden;touch-action:none;overscroll-behavior:contain;
+}
+body.android-device #paintWorld,
+body.android-device #paintBoard,
+body.android-device #paintCanvas {touch-action:none}
+body.android-device #paintBoard {
+  background-color:#fff!important;
+  background-image:
+   linear-gradient(0deg,transparent 24px,rgba(45,50,60,.08) 25px),
+   linear-gradient(90deg,transparent 24px,rgba(45,50,60,.08) 25px);
+}
+body.android-device #paintCanvas {background:transparent!important}
+body.android-device .android-paint-dock {
+  position:absolute;left:50%;
+  bottom:calc(var(--android-nav-height) + var(--android-safe-bottom) + 5px);
+  z-index:95;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;
+  width:min(96%,760px);padding:6px;border:1px solid var(--line);
+  border-radius:15px;background:color-mix(in srgb,var(--panel) 94%,transparent);
+  box-shadow:0 8px 30px rgba(0,0,0,.22);transform:translateX(-50%);
+  backdrop-filter:blur(12px);
+}
+body.android-device .android-paint-dock button {
+  display:flex;min-width:0;min-height:44px;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;padding:3px 2px;
+  border:1px solid transparent;border-radius:9px;background:transparent;
+  color:var(--ink);font-size:10px;font-weight:750;touch-action:manipulation;
+}
+body.android-device .android-paint-dock button:active,
+body.android-device .android-paint-dock button[aria-expanded="true"] {
+  border-color:var(--accent);background:var(--accent-soft);
+}
+body.android-device .android-paint-dock .android-paint-zoom-readout {
+  display:flex;justify-content:center;align-items:center;border:1px solid var(--line);
+  background:var(--app);color:var(--accent);font-variant-numeric:tabular-nums;font-size:11px;
+}
+body.android-device .android-paint-dock .dock-symbol {font-size:17px;line-height:1}
+body.android-device #paintWorld {will-change:transform;transform-origin:0 0}
+body.android-device .paint-board-name {color:#60646d!important;background:rgba(255,255,255,.82)}
+body.android-device .paint-drop-hint {bottom:14px;top:auto}
+body.android-device.android-keyboard-visible .studio-tabs,
+body.android-device.android-keyboard-visible .android-paint-dock {display:none!important}
+body.android-device.android-keyboard-visible .studio-pane {padding-bottom:6px}
+body.android-device.android-keyboard-visible #workspace {padding-bottom:8px}
+body.android-device .guionero-overlay,
+body.android-device .sync-modal,
+body.android-device .picker,
+body.android-device .node-add-menu,
+body.android-device .paint-brush-menu {
+  max-height:calc(var(--android-visual-height,100dvh) - env(safe-area-inset-top,0px) - var(--android-safe-bottom) - 18px);
+  overflow:auto;overscroll-behavior:contain;
+}
+body.android-device .note-inspector,
+body.android-device #paintLayersPanel,
+body.android-device #paintToolbar {scrollbar-width:thin}
+@media (max-width:650px) {
+ body.android-device .topbar {gap:5px;padding-left:7px;padding-right:7px}
+ body.android-device .top-actions button {min-width:38px;padding:5px 7px}
+ body.android-device #paintToolbar.android-paint-tools-open {left:6px;right:6px}
+ body.android-device #paintWorkarea.android-paint-layers-open #paintLayersPanel {width:min(92vw,350px)}
+ body.android-device .android-paint-dock {width:calc(100% - 10px);gap:3px}
+ body.android-device .android-paint-dock button {font-size:9px}
+ body.android-device #noteToolbarContent:not([hidden]) {grid-template-columns:minmax(0,1fr)}
+ body.android-device .note-inspector.open {left:5px;right:5px;top:5px;bottom:5px}
+}
+@media (min-width:651px) {
+ body.android-device #paintToolbar.android-paint-tools-open {
+  left:50%;right:auto;width:min(90%,760px);transform:translateX(-50%);
+ }
+ body.android-device #paintWorkarea.android-paint-layers-open #paintLayersPanel {width:min(42vw,390px)}
+ body.android-device .android-paint-dock {width:min(88%,760px)}
+}
+</style>
+
+<script id="guionero-android-complete-interaction">
+(()=>{'use strict';
+ if(window.__guioneroAndroidTouchDevice!==true)return;
+ const $=id=>document.getElementById(id);
+ document.body.classList.add('android-device');
+ let baseHeight=window.innerHeight||0,baseWidth=window.innerWidth||0,frame=0;
+ const isEditable=el=>!!(el&&(el.isContentEditable||/^(INPUT|TEXTAREA)$/.test(el.tagName||'')));
+ const syncViewport=()=>{
+  cancelAnimationFrame(frame);
+  frame=requestAnimationFrame(()=>{
+   const w=window.innerWidth||0,h=window.innerHeight||0;
+   if(Math.abs(w-baseWidth)>80){baseWidth=w;baseHeight=h;}
+   const vh=window.visualViewport?.height||h;
+   const keyboard=isEditable(document.activeElement)&&(baseHeight-vh>125||baseHeight-h>125);
+   document.body.classList.toggle('android-keyboard-visible',!!keyboard);
+   document.documentElement.style.setProperty('--android-visual-height',Math.max(200,vh)+'px');
+  });
+ };
+ document.addEventListener('focusin',syncViewport,true);
+ document.addEventListener('focusout',()=>setTimeout(syncViewport,100),true);
+ window.addEventListener('resize',syncViewport,{passive:true});
+ window.visualViewport?.addEventListener('resize',syncViewport,{passive:true});
+ window.visualViewport?.addEventListener('scroll',syncViewport,{passive:true});
+ syncViewport();
+
+ const menu=$('mobileMenuBtn'),sidebar=$('sidebar');
+ const closeSidebar=()=>sidebar?.classList.remove('open');
+ document.addEventListener('pointerdown',e=>{
+  if(sidebar?.classList.contains('open')&&!sidebar.contains(e.target)&&!menu?.contains(e.target))closeSidebar();
+ });
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar();});
+
+ // Script focus mode retains the original editable DOM, selection and event listeners.
+ const head=document.querySelector('#workspace .workspace-head');
+ if(head&&!$('androidScriptFocusButton')){
+  const button=document.createElement('button');
+  button.type='button';button.id='androidScriptFocusButton';
+  button.className='outline-button android-script-focus-button';
+  button.textContent='⛶ Enfocar';button.setAttribute('aria-pressed','false');
+  const restore=document.createElement('button');
+  restore.type='button';restore.id='androidScriptRestoreButton';
+  restore.className='android-script-restore';restore.textContent='Mostrar controles';
+  restore.setAttribute('aria-label','Salir del modo de escritura ampliado');
+  const setFocus=active=>{
+   document.body.classList.toggle('android-script-focus',active);
+   button.setAttribute('aria-pressed',String(active));
+   button.textContent=active?'↙ Salir':'⛶ Enfocar';
+   if(active)restore.focus({preventScroll:true});else button.focus({preventScroll:true});
+  };
+  button.addEventListener('click',()=>setFocus(!document.body.classList.contains('android-script-focus')));
+  restore.addEventListener('click',()=>setFocus(false));
+  head.appendChild(button);document.querySelector('.main')?.appendChild(restore);
+ }
+ const toolbar=$('scriptFormatToolbar');
+ if(toolbar&&!$('androidScriptFormatDetails')){
+  const details=document.createElement('details');
+  details.id='androidScriptFormatDetails';details.className='android-script-format-details';
+  const summary=document.createElement('summary');summary.textContent='Formato y sombreado';
+  toolbar.parentNode.insertBefore(details,toolbar);
+  details.append(summary,toolbar);
+ }
+
+ // Notes uses the existing inspector editor, surfaced as a full mobile sheet.
+ const inspector=$('noteInspector');
+ if(inspector&&!$('androidNotesInspectorHint')){
+  const hint=document.createElement('div');hint.id='androidNotesInspectorHint';
+  hint.className='node-inspector-hint';
+  hint.textContent='Panel de edición. Cierra con × para recuperar todo el lienzo.';
+  inspector.querySelector('.inspector-content')?.prepend(hint);
+ }
+
+ // Paint moves no existing controls and duplicates no IDs: the toolbar and layers become drawers.
+ const pane=$('panePaint'),paintToolbar=$('paintToolbar'),work=$('paintWorkarea'),layers=$('paintLayersPanel');
+ if(pane&&paintToolbar&&work&&!$('androidPaintDock')){
+  const sheetHead=document.createElement('div');
+  sheetHead.className='android-paint-sheet-head';
+  const title=document.createElement('strong');title.textContent='Herramientas de Paint';
+  const closeTools=document.createElement('button');closeTools.type='button';
+  closeTools.textContent='×';closeTools.setAttribute('aria-label','Cerrar herramientas');
+  sheetHead.append(title,closeTools);paintToolbar.prepend(sheetHead);
+
+  const layerHead=layers?.querySelector('header');
+  let closeLayers=null;
+  if(layerHead&&!layers.querySelector('.android-paint-layers-close')){
+   closeLayers=document.createElement('button');closeLayers.type='button';
+   closeLayers.className='android-paint-layers-close';closeLayers.textContent='×';
+   closeLayers.setAttribute('aria-label','Cerrar panel de capas');layerHead.appendChild(closeLayers);
+  }
+  const dock=document.createElement('div');dock.id='androidPaintDock';
+  dock.className='android-paint-dock';dock.setAttribute('role','toolbar');
+  dock.setAttribute('aria-label','Controles táctiles de Paint');
+  const addButton=(id,symbol,label,action)=>{
+   const b=document.createElement('button');b.type='button';b.id=id;b.title=label;
+   b.setAttribute('aria-label',label);
+   const icon=document.createElement('span');icon.className='dock-symbol';
+   icon.setAttribute('aria-hidden','true');icon.textContent=symbol;
+   const text=document.createElement('span');text.textContent=label;
+   b.append(icon,text);b.addEventListener('click',action);dock.appendChild(b);return b;
+  };
+  const toolsButton=addButton('androidPaintToolsToggle','✎','Herramientas',()=>setTools(!paintToolbar.classList.contains('android-paint-tools-open')));
+  const layersButton=addButton('androidPaintLayersToggle','▤','Capas',()=>setLayers(!work.classList.contains('android-paint-layers-open')));
+  addButton('androidPaintObjectsToggle','▧','Objetos',()=>{
+   setLayers(true);
+   const target=$('paintObjectInspector')&&!$('paintObjectInspector').hidden?$('paintObjectInspector'):$('paintObjectList');
+   target?.scrollIntoView({block:'nearest',behavior:'smooth'});
+  });
+  addButton('androidPaintZoomOut','−','Alejar',()=>{$('paintZoomOut')?.click();});
+  const zoomLabel=document.createElement('div');zoomLabel.id='androidPaintZoomReadout';
+  zoomLabel.className='android-paint-zoom-readout';zoomLabel.setAttribute('aria-live','polite');
+  zoomLabel.textContent='38%';dock.appendChild(zoomLabel);
+  addButton('androidPaintZoomIn','＋','Acercar',()=>{$('paintZoomIn')?.click();});
+  addButton('androidPaintFit','▣','Ajustar',()=>{$('paintFit')?.click();});
+  addButton('androidPaintReset','1:1','100%',()=>window.GuioneroStudio?.resetPaintView?.());
+  pane.appendChild(dock);
+
+  function setTools(open){
+   paintToolbar.classList.toggle('android-paint-tools-open',!!open);
+   toolsButton.setAttribute('aria-expanded',String(!!open));
+   if(open){setLayers(false);closeSidebar();}
+  }
+  function setLayers(open){
+   work.classList.toggle('android-paint-layers-open',!!open);
+   layersButton.setAttribute('aria-expanded',String(!!open));
+   if(open){setTools(false);closeSidebar();}
+  }
+  closeTools.addEventListener('click',()=>setTools(false));
+  closeLayers?.addEventListener('click',()=>setLayers(false));
+  document.addEventListener('pointerdown',e=>{
+   if(!pane.classList.contains('active'))return;
+   if(paintToolbar.classList.contains('android-paint-tools-open')&&!paintToolbar.contains(e.target)&&!dock.contains(e.target))setTools(false);
+   if(work.classList.contains('android-paint-layers-open')&&!layers?.contains(e.target)&&!dock.contains(e.target))setLayers(false);
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){setTools(false);setLayers(false);}});
+  const updateZoom=()=>{
+   const state=window.GuioneroStudio?.getPaintView?.();
+   if(state&&Number.isFinite(state.zoom))zoomLabel.textContent=Math.round(state.zoom*100)+'%';
+  };
+  if($('paintWorld')&&'MutationObserver'in window){
+   const observer=new MutationObserver(updateZoom);
+   observer.observe($('paintWorld'),{attributes:true,attributeFilter:['style']});
+  }
+  updateZoom();
+  window.addEventListener('resize',()=>{if(pane.classList.contains('active'))updateZoom();},{passive:true});
+  pane.addEventListener('click',e=>{
+   if(e.target.closest('#paintFit,#paintZoomIn,#paintZoomOut,#androidPaintReset'))updateZoom();
+  });
+ }
+})();
+</script>
+
 </body>
 </html>
