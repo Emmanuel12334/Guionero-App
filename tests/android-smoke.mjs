@@ -380,7 +380,12 @@ try {
   const hashAfterDraw=await canvasHash();
   assert.notEqual(hashAfterDraw,hashAfterPinch,'One-finger touch did not draw on Paint');
   await page.locator('#androidPaintToolsToggle').tap();
-  await page.waitForFunction(()=>document.querySelector('#paintToolbar').classList.contains('android-paint-tools-open'));
+  const toolOpenState=await page.evaluate(()=>{
+    const b=document.querySelector('#androidPaintToolsToggle'),p=document.querySelector('#paintToolbar');
+    const r=p.getBoundingClientRect(),s=getComputedStyle(p);
+    return {body:document.body.className,expanded:b?.getAttribute('aria-expanded'),toolbarClass:p.className,display:s.display,visibility:s.visibility,rect:[r.x,r.y,r.width,r.height],dockDisplay:getComputedStyle(b).display,dockPointerEvents:getComputedStyle(b).pointerEvents};
+  });
+  assert.ok(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),'Paint tools drawer should open again after one-finger draw: '+JSON.stringify(toolOpenState));
   const undoDrawerState=await page.evaluate(()=>{
     const ids=['paintToolbar','androidPaintUndoQuick','androidPaintRedoQuick'];
     return Object.fromEntries(ids.map(id=>{
