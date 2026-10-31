@@ -2334,7 +2334,7 @@ libraryReady=initLibrary();
  if(newBtn){newBtn.textContent='＋ NUEVO GUIÓN';newBtn.title='Crear un proyecto independiente';dock.appendChild(newBtn);}
  if(projectTools)dock.appendChild(projectTools);
  const mountProjectDock=()=>{
-   const mobile=document.body.classList.contains('android-device');
+   const mobile=document.body.classList.contains('android-device')||!!window.matchMedia?.('(max-width: 650px)').matches;
    if(mobile&&scriptPane){scriptPane.insertBefore(dock,scriptPane.firstChild);dock.classList.add('project-management-mobile');}
    else if(card){const meta=card.querySelector('.project-meta');if(meta)card.insertBefore(dock,meta);else card.appendChild(dock);dock.classList.remove('project-management-mobile');}
  };
