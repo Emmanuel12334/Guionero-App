@@ -121,6 +121,9 @@ try {
   await page.locator('#inspectorClose').tap();
   await page.locator('#noteAddPage').click();
   await page.locator('#inspectorClose').tap();
+  // Close the floating options sheet so it no longer overlays graph connectors.
+  await nodeToggle.tap();
+  assert.equal(await page.locator('#noteToolbarContent').isHidden(),true);
   let pair = await page.evaluate(() => {
     const s=window.GuioneroStudio.exportState(), ids=s.pages.slice(-2).map(p=>p.id);
     s.positions=s.positions||{};
