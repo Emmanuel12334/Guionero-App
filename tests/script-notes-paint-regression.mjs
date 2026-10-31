@@ -117,7 +117,6 @@ try {
   await saveProject();
   console.log('PASS: character history, manual Parenthetical and neutral Enter behavior');
 
-  await enterNext();
   await chooseType('CHARACTER');
   await page.waitForSelector('#picker .history-option');
   assert.equal(await page.locator('#picker .history-option').count(),1);
@@ -126,12 +125,12 @@ try {
   console.log('PASS: character suggestions dismiss with Escape');
 
   const savedEventsBefore=await page.evaluate(()=>window.__guioneroSavedEvents.length);
-  await fillActive('AUTOGUARDADO VERIFICADO');
-  assert.equal(await page.locator('#saveIndicatorText').innerText(),'No guardado');
   await page.evaluate(()=>{
     const original=window.setTimeout;
     window.setTimeout=function(callback,delay,...args){const adjusted=Number(delay)>=600000?45:delay;return original.call(this,callback,adjusted,...args);};
   });
+  await fillActive('AUTOGUARDADO VERIFICADO');
+  assert.equal(await page.locator('#saveIndicatorText').innerText(),'No guardado');
   await page.waitForFunction(n=>window.__guioneroSavedEvents.length>n,savedEventsBefore,{timeout:8000});
   assert.equal(await page.locator('#saveIndicatorText').innerText(),'Guardado');
   console.log('PASS: 20-minute autosave path invoked and indicator returned to Guardado');
