@@ -368,7 +368,7 @@
 /* This is device detection, not a responsive-width breakpoint: Android exposes Script only. */
 body.android-script-only #tabNote,body.android-script-only #tabPaint,
 body.android-script-only #paneNote,body.android-script-only #panePaint{display:none!important;visibility:hidden!important;pointer-events:none!important}
-body.android-script-only .studio-tabs{display:none!important}
+body.android-script-only .studio-tabs{display:flex!important}
 body.android-script-only #paneScript{display:flex!important}
 @media print{.script-project-toolbar{display:none!important}}
 
@@ -3227,7 +3227,7 @@ body.android-device #paintToolbar {scrollbar-width:thin}
  document.body.classList.add('android-device','android-script-only');
  const androidScriptOnlyStyle=document.createElement('style');
  androidScriptOnlyStyle.id='guioneroAndroidScriptOnlyFinalStyle';
- androidScriptOnlyStyle.textContent='body.android-script-only .studio-tabs,body.android-script-only #tabNote,body.android-script-only #tabPaint,body.android-script-only #paneNote,body.android-script-only #panePaint,body.android-script-only #nodeAddMenu,body.android-script-only #paintBrushMenu{display:none!important;visibility:hidden!important;pointer-events:none!important}body.android-script-only #paneScript{display:flex!important;flex-direction:column!important}';
+ androidScriptOnlyStyle.textContent='body.android-script-only #tabNote,body.android-script-only #tabPaint,body.android-script-only #paneNote,body.android-script-only #panePaint,body.android-script-only #nodeAddMenu,body.android-script-only #paintBrushMenu{display:none!important;visibility:hidden!important;pointer-events:none!important}body.android-script-only .studio-tabs{display:flex!important}body.android-script-only #paneScript{display:flex!important;flex-direction:column!important}';
  document.head.appendChild(androidScriptOnlyStyle);
  const androidScriptPane=$('paneScript');
  if(androidScriptPane){document.querySelectorAll('.studio-pane').forEach(p=>p.classList.toggle('active',p===androidScriptPane));document.querySelectorAll('.studio-tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.pane==='paneScript')));}
