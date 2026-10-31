@@ -209,7 +209,7 @@ try {
   await page.locator('#paintImport').click();
   await chooserPromise;
 
-  await page.locator('.android-paint-sheet-head button').tap();
+  await page.locator('.android-paint-sheet-head button[aria-label="Cerrar herramientas"]').tap();
   assert.equal(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),false);
   await page.locator('#androidPaintLayersToggle').tap();
   assert.ok(await page.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-layers-open')));
@@ -362,7 +362,7 @@ try {
   // Return to drawing mode through the original Paint tool selector.
   await page.locator('#androidPaintToolsToggle').tap();
   await page.locator('#paintMode').selectOption('draw');
-  await page.locator('.android-paint-sheet-head button').tap();
+  await page.locator('.android-paint-sheet-head button[aria-label="Cerrar herramientas"]').tap();
   pass('Paint one-finger object move/resize and safe two-finger gesture takeover');
 
   const cr=await page.locator('#paintCanvas').evaluate(el=>{
@@ -400,7 +400,7 @@ try {
   assert.match(zoomLabel,/^\d+%$/);
   await page.locator('#androidPaintToolsToggle').tap();
   await page.locator('#paintFit').tap();
-  await page.locator('.android-paint-sheet-head button').tap();
+  await page.locator('.android-paint-sheet-head button[aria-label="Cerrar herramientas"]').tap();
   await page.waitForTimeout(100);
   const fitZoom=await page.evaluate(()=>window.GuioneroStudio.getPaintView().zoom);
   assert.ok(fitZoom>0&&fitZoom<=2,'Fit should calculate a valid zoom');
@@ -472,7 +472,7 @@ try {
     await phonePage.locator('#androidPaintToolsToggle').tap();
     assert.ok(await phonePage.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')));
     assert.ok(await phonePage.locator('#paintFit').isVisible());
-    await phonePage.locator('.android-paint-sheet-head button').tap();
+    await phonePage.locator('.android-paint-sheet-head button[aria-label="Cerrar herramientas"]').tap();
     await phonePage.locator('#androidPaintLayersToggle').tap();
     assert.ok(await phonePage.locator('#paintWorkarea').evaluate(el=>el.classList.contains('android-paint-layers-open')));
     assert.ok(await phonePage.locator('#paintLayersPanel').isVisible());
@@ -488,7 +488,7 @@ try {
     }
     await phonePage.locator('#androidPaintToolsToggle').tap();
     await phonePage.locator('#paintFit').tap();
-    await phonePage.locator('.android-paint-sheet-head button').tap();
+    await phonePage.locator('.android-paint-sheet-head button[aria-label="Cerrar herramientas"]').tap();
     assert.deepEqual(phoneErrors,[],layout.name+' runtime errors: '+phoneErrors.join(' | '));
     pass('Android '+layout.name+' full-canvas layout and Paint drawers',JSON.stringify({tabs,geometry}));
     await context.close();
