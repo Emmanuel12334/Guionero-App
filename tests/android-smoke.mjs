@@ -40,6 +40,7 @@ try {
 
   const shell = await page.evaluate(() => ({
     classes:document.body.className,
+    androidTouchFlag:window.__guioneroAndroidTouchDevice===true,
     width:document.documentElement.clientWidth,
     scrollWidth:document.documentElement.scrollWidth,
     noteDisplay:getComputedStyle(document.querySelector('#tabNote')).display,
@@ -47,6 +48,7 @@ try {
     dock:!!document.querySelector('#projectManagementDock')
   }));
   assert.match(shell.classes,/android-device/);
+  assert.equal(shell.androidTouchFlag,true,'Android should activate the platform+touch capability gate');
   assert.notEqual(shell.noteDisplay,'none');
   assert.notEqual(shell.paintDisplay,'none');
   assert.ok(shell.dock);
@@ -519,6 +521,21 @@ try {
   assert.equal(updatedNoteTransform,baselineNoteTransform,'Desktop Node mouse zoom changed');
   pass('Desktop baseline regression: interface metrics and Paint/Node mouse zoom unchanged',JSON.stringify(desktopState));
   await desktop.close();
+
+  const windowsTouch=await browser.newContext({
+    viewport:{width:1280,height:800},isMobile:true,hasTouch:true,
+    userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36'
+  });
+  const windowsTouchPage=await windowsTouch.newPage();
+  await boot(windowsTouchPage);
+  const windowsTouchState=await windowsTouchPage.evaluate(()=>({
+    flag:window.__guioneroAndroidTouchDevice===true,
+    androidClass:document.body.classList.contains('android-device'),
+    androidDock:!!document.querySelector('#androidPaintDock')
+  }));
+  assert.deepEqual(windowsTouchState,{flag:false,androidClass:false,androidDock:false},'A non-Android touchscreen must not receive the Android workspace');
+  pass('Capability gate does not mistake a Windows touchscreen for Android');
+  await windowsTouch.close();
 
   console.log(JSON.stringify({result:'PASS',checks:report},null,2));
 } catch (e) {
