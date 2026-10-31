@@ -366,9 +366,10 @@
 @media(max-width:780px){#paintLayersPanel{flex-basis:190px;width:190px;padding:7px}.paint-toolbar button,.paint-toolbar select{max-width:125px;font-size:10px}.project-library-status{display:none}}
 @media(max-width:520px){#paintLayersPanel{flex-basis:145px;width:145px;max-width:38%;padding:5px}.paint-layer-actions button,.paint-object-actions button{font-size:9px}.paint-toolbar{max-height:36vh;overflow:auto}.script-project-toolbar{gap:5px;padding:6px}.script-project-toolbar select{flex-basis:100%;max-width:none}.script-project-toolbar button{flex:1 1 auto}}
 /* This is device detection, not a responsive-width breakpoint: Android exposes Script only. */
-body.android-script-only #tabNote,body.android-script-only #paneNote{display:none!important}
-body.android-script-only #tabScript{display:inline-flex!important}
+body.android-script-only #tabNote,body.android-script-only #tabPaint,
+body.android-script-only #paneNote,body.android-script-only #panePaint{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.android-script-only .studio-tabs{display:flex!important}
+body.android-script-only #paneScript{display:flex!important}
 @media print{.script-project-toolbar{display:none!important}}
 
 
@@ -501,7 +502,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
  window.__guioneroAndroidCoarsePointer=coarse;
  if(!enabled)return;
  const body=document.body,root=document.documentElement;
- body.classList.add('android-device');
+ body.classList.add('android-device','android-script-only');
  const update=()=>{
   const w=window.innerWidth||0,h=window.innerHeight||0;
   const tablet=Math.min(w,h)>=600||nav.userAgentData?.mobile===false;
@@ -1552,7 +1553,7 @@ function getViewerFlow(){
  return{valid:true,pages:all,sequences,reason:problems.length?('Se omitieron conexiones inválidas: '+problems.join('; ')):''};
 }
 
-function switchTab(id){if(document.body.classList.contains('android-script-only')&&id==='paneNote')id='paneScript';const leavingPaint=$('panePaint')?.classList.contains('active')&&id!=='panePaint';if(leavingPaint&&typeof saveBoard==='function')saveBoard(false);if(id!=='paneNote'&&$('noteInspector')?.classList.contains('open'))closeInspector();document.querySelectorAll('.studio-tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.pane===id)));document.querySelectorAll('.studio-pane').forEach(p=>p.classList.toggle('active',p.id===id));if(id==='paneNote'){renderNote();}if(id==='panePaint'){applyPaintCamera();}}
+function switchTab(id){if(document.body.classList.contains('android-script-only')&&id!=='paneScript')id='paneScript';const leavingPaint=$('panePaint')?.classList.contains('active')&&id!=='panePaint';if(leavingPaint&&typeof saveBoard==='function')saveBoard(false);if(id!=='paneNote'&&$('noteInspector')?.classList.contains('open'))closeInspector();document.querySelectorAll('.studio-tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.pane===id)));document.querySelectorAll('.studio-pane').forEach(p=>p.classList.toggle('active',p.id===id));if(id==='paneNote'){renderNote();}if(id==='panePaint'){applyPaintCamera();}}
 document.querySelectorAll('.studio-tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.pane)));
 
 // Render Script strictly from the manually connected path ending at Viewer. Page text remains in model.pages.
@@ -2172,7 +2173,7 @@ const $=id=>document.getElementById(id);
 const LOCAL_KEY='guionero_local_v1', STUDIO_KEY='guionero_studio_v1', ACTIVE_KEY='guionero_active_project_id', FALLBACK_KEY='guionero_project_library_fallback_v1';
 const PICKER_VALUE='__search_project_files__';
 const isAndroid=window.__guioneroAndroidTouchDevice===true;
-if(isAndroid){document.body.classList.add('android-device');$('tabNote')?.removeAttribute('hidden');$('paneNote')?.removeAttribute('hidden');$('tabPaint')?.removeAttribute('hidden');$('panePaint')?.removeAttribute('hidden');}
+if(isAndroid){document.body.classList.add('android-device','android-script-only');}
 const toolbar=$('scriptProjectToolbar'),oldNew=$('newScriptBtn');
 if(toolbar&&oldNew){oldNew.classList.add('project-new-script-main');oldNew.textContent='＋ NUEVO GUIÓN';oldNew.title='Crear un proyecto independiente';toolbar.insertBefore(oldNew,$('projectImportBtn'));oldNew.style.display='';}
 let dirty=false,saveTimer=null,dbPromise=null,libraryCache=[],capturingSnapshot=false,switchingProject=false,libraryReady=Promise.resolve();
@@ -3223,7 +3224,13 @@ body.android-device #paintToolbar {scrollbar-width:thin}
 (()=>{'use strict';
  if(window.__guioneroAndroidTouchDevice!==true)return;
  const $=id=>document.getElementById(id);
- document.body.classList.add('android-device');
+ document.body.classList.add('android-device','android-script-only');
+ const androidScriptOnlyStyle=document.createElement('style');
+ androidScriptOnlyStyle.id='guioneroAndroidScriptOnlyFinalStyle';
+ androidScriptOnlyStyle.textContent='body.android-script-only #tabNote,body.android-script-only #tabPaint,body.android-script-only #paneNote,body.android-script-only #panePaint,body.android-script-only #nodeAddMenu,body.android-script-only #paintBrushMenu{display:none!important;visibility:hidden!important;pointer-events:none!important}body.android-script-only .studio-tabs{display:flex!important}body.android-script-only #paneScript{display:flex!important;flex-direction:column!important}';
+ document.head.appendChild(androidScriptOnlyStyle);
+ const androidScriptPane=$('paneScript');
+ if(androidScriptPane){document.querySelectorAll('.studio-pane').forEach(p=>p.classList.toggle('active',p===androidScriptPane));document.querySelectorAll('.studio-tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.pane==='paneScript')));}
  let baseHeight=window.innerHeight||0,baseWidth=window.innerWidth||0,frame=0;
  const isEditable=el=>!!(el&&(el.isContentEditable||/^(INPUT|TEXTAREA)$/.test(el.tagName||'')));
  const syncViewport=()=>{
