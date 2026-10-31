@@ -3088,6 +3088,12 @@ body.android-device .android-paint-sheet-head button {
   min-width:40px;min-height:40px;border:1px solid var(--line);border-radius:50%;
   background:var(--app);color:var(--ink);font-size:19px;
 }
+body.android-device .android-paint-sheet-history {
+  display:flex;align-items:center;gap:5px;margin-left:auto;
+}
+body.android-device .android-paint-sheet-history button {
+  min-width:42px;min-height:40px;border-radius:9px;font-size:18px;font-weight:850;
+}
 body.android-device #paintWorkarea {
   position:relative;flex:1 1 0;min-width:0;min-height:0;width:100%;
   overflow:hidden;touch-action:none;overscroll-behavior:contain;background-color:var(--app);
@@ -3280,9 +3286,19 @@ body.android-device #paintToolbar {scrollbar-width:thin}
   const sheetHead=document.createElement('div');
   sheetHead.className='android-paint-sheet-head';
   const title=document.createElement('strong');title.textContent='Herramientas de Paint';
+  const history=document.createElement('div');history.className='android-paint-sheet-history';
+  const quickUndo=document.createElement('button');quickUndo.type='button';
+  quickUndo.id='androidPaintUndoQuick';quickUndo.textContent='↶';
+  quickUndo.title='Deshacer';quickUndo.setAttribute('aria-label','Deshacer');
+  const quickRedo=document.createElement('button');quickRedo.type='button';
+  quickRedo.id='androidPaintRedoQuick';quickRedo.textContent='↷';
+  quickRedo.title='Rehacer';quickRedo.setAttribute('aria-label','Rehacer');
+  quickUndo.addEventListener('click',()=>{$('paintUndo')?.click();});
+  quickRedo.addEventListener('click',()=>{$('paintRedo')?.click();});
+  history.append(quickUndo,quickRedo);
   const closeTools=document.createElement('button');closeTools.type='button';
   closeTools.textContent='×';closeTools.setAttribute('aria-label','Cerrar herramientas');
-  sheetHead.append(title,closeTools);paintToolbar.prepend(sheetHead);
+  sheetHead.append(title,history,closeTools);paintToolbar.prepend(sheetHead);
 
   const layerHead=layers?.querySelector('header');
   let closeLayers=null;
