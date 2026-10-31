@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -19,7 +19,7 @@ jobs:
       - name: Check HTML and inline JavaScript
         run: node scripts/check-html.js
       - name: Install Playwright
-        run: npm install --no-save --no-package-lock playwright@1.55.0
+        run: npm install --no-save --no-package-lock playwright@1.64.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run desktop and Android browser tests
