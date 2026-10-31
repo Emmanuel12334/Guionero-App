@@ -11,8 +11,8 @@ function pass(name, detail = '') { report.push({name, result:'PASS', detail}); }
 function assertStep(name, fn) {
   try { return fn(); } catch (e) { report.push({name, result:'FAIL', detail:String(e.message || e)}); throw e; }
 }
-async function boot(page) {
-  await page.goto(url, {waitUntil:'domcontentloaded'});
+async function boot(page,target=url) {
+  await page.goto(target, {waitUntil:'domcontentloaded'});
   await page.waitForSelector('#script', {timeout:15000});
   await page.waitForFunction(() => !!window.GuioneroStudio && !!document.querySelector('.studio-tabs'), null, {timeout:15000});
   await page.waitForTimeout(900);
@@ -63,6 +63,32 @@ try {
   await projToggle.click();
   assert.equal(await projPanel.isHidden(),true);
   pass('Script project accordion opens and closes');
+
+  const focusButton=page.locator('#androidScriptFocusButton');
+  await focusButton.waitFor({state:'visible',timeout:5000});
+  await focusButton.tap();
+  assert.ok(await page.locator('body').evaluate(el=>el.classList.contains('android-script-focus')));
+  assert.ok(await page.locator('#androidScriptRestoreButton').isVisible());
+  const editorLine=page.locator('#script .script-line').first();
+  await editorLine.click();
+  await page.keyboard.press('End');
+  await page.keyboard.insertText(' Android focus editor test');
+  await page.waitForTimeout(200);
+  assert.ok((await page.locator('#script').innerText()).includes('Android focus editor test'),'Script should accept typing in focus mode');
+  await page.keyboard.press('Control+A');
+  const selectedText=await page.evaluate(()=>window.getSelection()?.toString()||'');
+  assert.ok(selectedText.includes('Android focus editor test'),'Script should allow selecting text');
+  await page.locator('#androidScriptRestoreButton').tap();
+  assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('android-script-focus')),false);
+  const heightBeforeKeyboard=await page.evaluate(()=>window.visualViewport?.height||window.innerHeight);
+  await page.locator('#script').click();
+  await page.setViewportSize({width:393,height:Math.max(430,Math.round(heightBeforeKeyboard-230))});
+  await page.waitForTimeout(160);
+  assert.ok(await page.locator('body').evaluate(el=>el.classList.contains('android-keyboard-visible')),'Visual viewport reduction while editing should activate keyboard-safe layout');
+  await page.setViewportSize({width:393,height:852});
+  await page.waitForTimeout(160);
+  assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('android-keyboard-visible')),false);
+  pass('Script focus mode, typing, text selection and keyboard viewport adaptation');
 
   await page.locator('#tabNote').click();
   await page.waitForFunction(()=>document.querySelector('#paneNote').classList.contains('active'));
