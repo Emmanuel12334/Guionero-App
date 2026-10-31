@@ -129,6 +129,10 @@ async function testPaintText(page, label, useTouch) {
   const toolbar = page.locator('#paintToolbar');
   if (await toolbar.evaluate(el => el.classList.contains('paint-toolbar-collapsed'))) await page.locator('#paintToolbarToggle').click();
   await page.locator('#paintTextBtn').click();
+  if (useTouch) {
+    await page.waitForFunction(() => !document.getElementById('paintToolbar')?.classList.contains('android-paint-tools-open'));
+    assert.equal(await page.locator('#paintTool').inputValue(), 'text', 'Android: la herramienta TEXTO queda seleccionada');
+  }
   const box = await page.locator('#paintCanvas').boundingBox();
   assert.ok(box && box.width > 80 && box.height > 50, label + ': canvas Paint visible');
   const from = { x: box.x + 35, y: box.y + 35 };
