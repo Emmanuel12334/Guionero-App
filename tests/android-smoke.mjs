@@ -380,11 +380,37 @@ try {
     await context.close();
   }
 
-  const desktop=await browser.newContext({
+  const baselinePath=process.env.GUIONERO_DESKTOP_BASELINE;
+  assert.ok(baselinePath,'Desktop comparison needs the pre-update main index.html baseline');
+  const desktopOptions={
     viewport:{width:1365,height:900},
     userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36',
     hasTouch:false
-  });
+  };
+  const selectors=['.app','.sidebar','.main','.topbar','#mainTitle','.studio-tabs','#paneScript','#workspace','#scriptProjectToolbar','#scriptFormatToolbar','#paper','#script','#paneNote','.note-toolbar','.note-layout','#noteCanvasWrap','#noteInspector','#panePaint','#paintToolbar','#paintWorkarea','#paintLayersPanel','#paintViewport','#paintBoard','#paintCanvas'];
+  const geometrySnapshot=page=>page.evaluate(list=>list.map(sel=>{
+    const el=document.querySelector(sel);
+    if(!el)return{sel,missing:true};
+    const r=el.getBoundingClientRect(),s=getComputedStyle(el);
+    return{sel,rect:[r.x,r.y,r.width,r.height],display:s.display,position:s.position,flexDirection:s.flexDirection,overflow:s.overflow,background:s.backgroundColor,color:s.color};
+  }),selectors);
+  const baselineContext=await browser.newContext(desktopOptions);
+  const baselinePage=await baselineContext.newPage(),baselineErrors=[];
+  baselinePage.on('pageerror',e=>baselineErrors.push(e.message));
+  await boot(baselinePage,pathToFileURL(resolve(baselinePath)).href);
+  const baselineGeometry=await geometrySnapshot(baselinePage);
+  assert.deepEqual(baselineErrors,[],'Pre-update desktop baseline runtime errors: '+baselineErrors.join(' | '));
+  await baselinePage.locator('#tabPaint').click();
+  await baselinePage.waitForFunction(()=>document.querySelector('#panePaint').classList.contains('active'));
+  await baselinePage.locator('#paintZoomIn').click();
+  const baselinePaintTransform=await baselinePage.locator('#paintWorld').evaluate(el=>el.style.transform);
+  await baselinePage.locator('#tabNote').click();
+  await baselinePage.waitForFunction(()=>document.querySelector('#paneNote').classList.contains('active'));
+  await baselinePage.locator('#noteZoomIn').click();
+  const baselineNoteTransform=await baselinePage.locator('#noteWorld').evaluate(el=>el.style.transform);
+  await baselineContext.close();
+
+  const desktop=await browser.newContext(desktopOptions);
   const desktopPage=await desktop.newPage(),desktopErrors=[];
   desktopPage.on('pageerror',e=>desktopErrors.push(e.message));
   await boot(desktopPage);
@@ -393,6 +419,7 @@ try {
     projectToggle:!!document.querySelector('#androidProjectManagementToggle'),
     nodeToggle:!!document.querySelector('#noteToolbarToggle'),
     paintTools:!!document.querySelector('#androidPaintTools'),
+    paintDock:!!document.querySelector('#androidPaintDock'),
     width:document.documentElement.clientWidth,
     scrollWidth:document.documentElement.scrollWidth
   }));
@@ -400,9 +427,21 @@ try {
   assert.equal(desktopState.projectToggle,false);
   assert.equal(desktopState.nodeToggle,false);
   assert.equal(desktopState.paintTools,false);
+  assert.equal(desktopState.paintDock,false);
   assert.ok(desktopState.scrollWidth<=desktopState.width+2,'Desktop page has horizontal overflow');
+  assert.deepEqual(await geometrySnapshot(desktopPage),baselineGeometry,'Desktop geometry/computed styles differ from the pre-update main baseline');
   assert.deepEqual(desktopErrors,[],'Desktop runtime errors: '+desktopErrors.join(' | '));
-  pass('Desktop regression guard: no Android-only controls or runtime errors',JSON.stringify(desktopState));
+  await desktopPage.locator('#tabPaint').click();
+  await desktopPage.waitForFunction(()=>document.querySelector('#panePaint').classList.contains('active'));
+  await desktopPage.locator('#paintZoomIn').click();
+  const updatedPaintTransform=await desktopPage.locator('#paintWorld').evaluate(el=>el.style.transform);
+  assert.equal(updatedPaintTransform,baselinePaintTransform,'Desktop Paint mouse zoom changed');
+  await desktopPage.locator('#tabNote').click();
+  await desktopPage.waitForFunction(()=>document.querySelector('#paneNote').classList.contains('active'));
+  await desktopPage.locator('#noteZoomIn').click();
+  const updatedNoteTransform=await desktopPage.locator('#noteWorld').evaluate(el=>el.style.transform);
+  assert.equal(updatedNoteTransform,baselineNoteTransform,'Desktop Node mouse zoom changed');
+  pass('Desktop baseline regression: interface metrics and Paint/Node mouse zoom unchanged',JSON.stringify(desktopState));
   await desktop.close();
 
   console.log(JSON.stringify({result:'PASS',checks:report},null,2));
