@@ -11,6 +11,12 @@ Fecha del paquete: 2026-10-29.
 
 - La auditoría Android también cubre ahora 360×740 y 412×915 en vertical, y 915×412 en horizontal; comprueba el apilado del panel de capas, el ancho útil del lienzo, el menú lateral y los botones táctiles de Paint.
 
+## Nueva auditoría Android
+
+La capa móvil detecta plataforma Android junto con capacidades táctiles; no aplica su interfaz cuando el navegador informa Windows/macOS/Linux como plataforma. El modo Android introduce navegación inferior, paneles temporales para Paint, panel de opciones en Notes y modo de escritura enfocado para Script. El fondo visual de Paint se fuerza a blanco en Android; el canvas de dibujo y las exportaciones de capas aisladas conservan transparencia. Las exportaciones de composición completa mantienen el fondo blanco.
+
+La auditoría automatizada se ejecuta con Chromium/Playwright emulando teléfonos y tabletas Android, eventos táctiles, controles desplegables, escritura en contentEditable, cambios de tamaño del viewport como aproximación al teclado virtual, y verificación de salida PNG (blanco en composición completa, alfa en capa aislada). En el mismo trabajo compara la geometría y estilos calculados de escritorio contra el archivo index.html capturado desde main antes de la actualización, y repite controles de zoom con ratón en Paint y Node.
+
 ## Límites conocidos de estas pruebas
 
 - No se probó exhaustivamente cada característica ni cada combinación de datos. La emulación Chromium no sustituye una comprobación física en varios modelos Android, capas del fabricante y teclados reales.
