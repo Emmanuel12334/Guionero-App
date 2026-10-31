@@ -3328,8 +3328,8 @@ body.android-device #paintToolbar {scrollbar-width:thin}
    const text=document.createElement('span');text.textContent=label;
    b.append(icon,text);b.addEventListener('click',action);dock.appendChild(b);return b;
   };
-  const toolsButton=addButton('androidPaintToolsToggle','✎','Herramientas',()=>setTools(!paintToolbar.classList.contains('android-paint-tools-open')));
-  const layersButton=addButton('androidPaintLayersToggle','▤','Capas',()=>setLayers(!work.classList.contains('android-paint-layers-open')));
+  const toolsButton=addButton('androidPaintToolsToggle','✎','Herramientas',()=>{});
+  const layersButton=addButton('androidPaintLayersToggle','▤','Capas',()=>{});
   addButton('androidPaintObjectsToggle','▧','Objetos',()=>{
    setLayers(true);
    const target=$('paintObjectInspector')&&!$('paintObjectInspector').hidden?$('paintObjectInspector'):$('paintObjectList');
@@ -3354,6 +3354,23 @@ body.android-device #paintToolbar {scrollbar-width:thin}
    layersButton.setAttribute('aria-expanded',String(!!open));
    if(open){setTools(false);closeSidebar();}
   }
+  // Handle Android finger taps at pointerdown so the document-level outside-tap
+  // handler cannot race the click event and close the drawer as it opens.
+  const bindAndroidDockToggle=(button,isOpen,setOpen)=>{
+   let lastTouchAt=0;
+   button.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='touch'&&e.pointerType!=='pen')return;
+    e.preventDefault();e.stopPropagation();
+    lastTouchAt=performance.now();
+    setOpen(!isOpen());
+   },{passive:false});
+   button.addEventListener('click',e=>{
+    if(e.detail>0&&performance.now()-lastTouchAt<750)return;
+    setOpen(!isOpen());
+   });
+  };
+  bindAndroidDockToggle(toolsButton,()=>paintToolbar.classList.contains('android-paint-tools-open'),setTools);
+  bindAndroidDockToggle(layersButton,()=>work.classList.contains('android-paint-layers-open'),setLayers);
   closeTools.addEventListener('click',()=>setTools(false));
   closeLayers?.addEventListener('click',()=>setLayers(false));
   document.addEventListener('pointerdown',e=>{
