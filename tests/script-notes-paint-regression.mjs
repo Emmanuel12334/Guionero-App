@@ -41,9 +41,13 @@ try {
     return activeLine();
   }
   async function enterNext(){
+    const before=await page.locator('#script .script-line').count();
     const line=await activeLine();
-    await line.press('Enter');
-    await page.waitForTimeout(35);
+    const box=await line.boundingBox();
+    assert.ok(box,'Active Script line should be visible before Enter');
+    await page.mouse.click(box.x+box.width-5,box.y+box.height/2);
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(n=>document.querySelectorAll('#script .script-line').length>n,before,{timeout:3000});
     return activeLine();
   }
   async function fillActive(value){
