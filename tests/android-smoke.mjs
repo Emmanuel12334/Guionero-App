@@ -379,13 +379,17 @@ try {
   await page.waitForTimeout(350);
   const hashAfterDraw=await canvasHash();
   assert.notEqual(hashAfterDraw,hashAfterPinch,'One-finger touch did not draw on Paint');
-  await page.locator('#androidPaintToolsToggle').tap();
+  const openBeforeUndo=await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open'));
+  const expandedBeforeUndo=await page.locator('#androidPaintToolsToggle').getAttribute('aria-expanded');
+  assert.equal(expandedBeforeUndo,String(openBeforeUndo),'Paint tools aria-expanded should match the real open state before Undo');
+  if(!openBeforeUndo)await page.locator('#androidPaintToolsToggle').tap();
   const toolOpenState=await page.evaluate(()=>{
     const b=document.querySelector('#androidPaintToolsToggle'),p=document.querySelector('#paintToolbar');
     const r=p.getBoundingClientRect(),s=getComputedStyle(p);
     return {body:document.body.className,expanded:b?.getAttribute('aria-expanded'),toolbarClass:p.className,display:s.display,visibility:s.visibility,rect:[r.x,r.y,r.width,r.height],dockDisplay:getComputedStyle(b).display,dockPointerEvents:getComputedStyle(b).pointerEvents};
   });
-  assert.ok(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),'Paint tools drawer should open again after one-finger draw: '+JSON.stringify(toolOpenState));
+  assert.ok(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),'Paint tools drawer should be open for Undo: '+JSON.stringify({openBeforeUndo,toolOpenState}));
+  assert.equal(await page.locator('#androidPaintToolsToggle').getAttribute('aria-expanded'),'true','Paint tools dock should report expanded when its drawer is open');
   const undoDrawerState=await page.evaluate(()=>{
     const ids=['paintToolbar','androidPaintUndoQuick','androidPaintRedoQuick'];
     return Object.fromEntries(ids.map(id=>{
