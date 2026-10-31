@@ -24,7 +24,7 @@ try {
   }
   assert.equal(await page.locator('#saveIndicatorText').innerText(),'Guardado');
   assert.equal(await page.locator('#saveProjectBtn').isVisible(),true);
-  assert.equal(await page.locator('#editor-help').count(),0);
+  assert.equal(await page.locator('.editor-help').count(),0);
   console.log('PASS: Script UI cleanup and visible real save indicator');
 
   async function activeLine(){
@@ -177,10 +177,24 @@ try {
   const textObject=page.locator('.paint-text-content[contenteditable="true"]').last();
   await textObject.waitFor({state:'visible',timeout:3000});
   await textObject.fill('GUIONERO PNG EXPORT');
-  await page.locator('#paintExport').click();
+  const imageData=await page.evaluate(()=>{
+    const c=document.createElement('canvas');c.width=8;c.height=8;
+    const x=c.getContext('2d');x.fillStyle='#d22';x.fillRect(0,0,8,8);
+    return c.toDataURL('image/png').split(',')[1];
+  });
+  const imageChooserPromise=page.waitForEvent('filechooser');
+  await page.locator('#paintImport').click();
+  const imageChooser=await imageChooserPromise;
+  await imageChooser.setFiles({name:'regression-red-square.png',mimeType:'image/png',buffer:Buffer.from(imageData,'base64')});
+  await page.waitForFunction(()=>{
+    const s=window.GuioneroStudio.exportState(),b=s.boards.find(x=>x.id===s.activeBoard);
+    return b.objects.some(o=>o.kind!=='text'&&o.data);
+  },null,{timeout:5000});
   let state=await page.evaluate(()=>window.GuioneroStudio.exportState());
   const activeBoard=state.boards.find(b=>b.id===state.activeBoard);
   assert.ok(activeBoard.objects.some(o=>o.kind==='text'&&o.text.includes('GUIONERO PNG EXPORT')),'Paint text should persist in the board model');
+  assert.ok(activeBoard.objects.some(o=>o.kind!=='text'&&o.data),'Imported image should persist in the board model');
+  const canvasSize={width:activeBoard.width,height:activeBoard.height};
   const [download]=await Promise.all([
     page.waitForEvent('download'),
     page.locator('#paintExport').click()
@@ -190,7 +204,9 @@ try {
   const png=await readFile(filePath);
   assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a','Export must be a PNG, not a UI screenshot file');
   assert.ok(png.length>500,'PNG export should contain actual canvas artwork');
-  console.log('PASS: Paint text object and composed PNG export');
+  assert.equal(png.readUInt32BE(16),canvasSize.width,'PNG width should match the artwork canvas, not the app viewport');
+  assert.equal(png.readUInt32BE(20),canvasSize.height,'PNG height should match the artwork canvas, not the app viewport');
+  console.log('PASS: Paint text, image import, and canvas-only PNG export');
 
   await page.locator('#saveProjectBtn').click();
   await page.waitForFunction(()=>document.querySelector('#saveIndicatorText')?.textContent==='Guardado');
