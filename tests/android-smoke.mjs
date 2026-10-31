@@ -255,6 +255,82 @@ try {
   assert.equal(await canvasHash(),hashBeforePinch,'Two-finger pan must not draw');
   pass('Paint two-finger drag pans without changing zoom or pixels');
 
+  // Existing image objects must still move and resize with one finger.
+  const objectId=await page.evaluate(()=>{
+    const api=window.GuioneroStudio,s=api.exportState(),b=s.boards.find(x=>x.id===s.activeBoard);
+    const view=api.getPaintView(),v=document.querySelector('#paintViewport');
+    const cx=(v.clientWidth/2-view.pan.x)/view.zoom,cy=(v.clientHeight/2-view.pan.y)/view.zoom;
+    const id='android-touch-object-test';
+    b.objects=(b.objects||[]).filter(o=>o.id!==id);
+    b.objects.push({
+      id,kind:'image',name:'Android touch test',
+      data:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5f7eoAAAAASUVORK5CYII=',
+      x:cx-50,y:cy-40,w:100,h:80,rotation:0,flipX:false,flipY:false,
+      opacity:1,visible:true,layerId:b.activeLayerId,crop:{left:0,right:0,top:0,bottom:0}
+    });
+    b.view=b.view||{};b.view.selectedObjectId=id;
+    b.toolState={...(b.toolState||{}),mode:'select'};
+    api.importState(s,{notifyCloud:false});
+    return id;
+  });
+  await page.waitForTimeout(180);
+  const objectSelector='#paintBoard [data-paint-object-id="'+objectId+'"]';
+  let objectBox=await page.locator(objectSelector).boundingBox();
+  assert.ok(objectBox,'Paint imported image object should be visible');
+  const objectBefore=await page.evaluate(id=>{
+    const o=window.GuioneroStudio.exportState().boards.flatMap(b=>b.objects||[]).find(x=>x.id===id);
+    return {x:o.x,y:o.y,w:o.w,h:o.h};
+  },objectId);
+  const movePoint={x:objectBox.x+objectBox.width/2,y:objectBox.y+objectBox.height/2};
+  await touch(paintCdp,'touchStart',[{id:51,...movePoint}]);
+  await touch(paintCdp,'touchMove',[{id:51,x:movePoint.x+35,y:movePoint.y+22}]);
+  await touch(paintCdp,'touchEnd',[]);
+  await page.waitForTimeout(160);
+  const objectMoved=await page.evaluate(id=>{
+    const o=window.GuioneroStudio.exportState().boards.flatMap(b=>b.objects||[]).find(x=>x.id===id);
+    return {x:o.x,y:o.y,w:o.w,h:o.h};
+  },objectId);
+  assert.ok(objectMoved.x>objectBefore.x+10&&objectMoved.y>objectBefore.y+5,'One-finger drag should move the selected object');
+
+  // Drag the southeast transform handle to resize the image with one finger.
+  const resizeBox=await page.locator(objectSelector+' .paint-transform-handle.se').boundingBox();
+  assert.ok(resizeBox,'Selected Paint object should expose resize handles');
+  await touch(paintCdp,'touchStart',[{id:52,x:resizeBox.x+resizeBox.width/2,y:resizeBox.y+resizeBox.height/2}]);
+  await touch(paintCdp,'touchMove',[{id:52,x:resizeBox.x+resizeBox.width/2+30,y:resizeBox.y+resizeBox.height/2+25}]);
+  await touch(paintCdp,'touchEnd',[]);
+  await page.waitForTimeout(160);
+  const objectResized=await page.evaluate(id=>{
+    const o=window.GuioneroStudio.exportState().boards.flatMap(b=>b.objects||[]).find(x=>x.id===id);
+    return {x:o.x,y:o.y,w:o.w,h:o.h};
+  },objectId);
+  assert.ok(objectResized.w>objectMoved.w&&objectResized.h>objectMoved.h,'One-finger handle drag should resize the selected object');
+
+  // A second finger cancels an in-progress object gesture before the camera takes over.
+  const beforePinchObject={...objectResized};
+  objectBox=await page.locator(objectSelector).boundingBox();
+  const objectTouch={x:objectBox.x+objectBox.width/2,y:objectBox.y+objectBox.height/2};
+  const viewportBox=await page.locator('#paintViewport').boundingBox();
+  const secondTouch={x:viewportBox.x+viewportBox.width-18,y:viewportBox.y+viewportBox.height-24};
+  const objectHashBefore=await canvasHash();
+  await touch(paintCdp,'touchStart',[{id:53,...objectTouch}]);
+  await touch(paintCdp,'touchMove',[{id:53,x:objectTouch.x+18,y:objectTouch.y+10}]);
+  await touch(paintCdp,'touchStart',[{id:53,x:objectTouch.x+18,y:objectTouch.y+10},{id:54,...secondTouch}]);
+  await touch(paintCdp,'touchMove',[{id:53,x:objectTouch.x-10,y:objectTouch.y+25},{id:54,x:secondTouch.x+45,y:secondTouch.y+25}]);
+  await touch(paintCdp,'touchEnd',[]);
+  await page.waitForTimeout(160);
+  const afterPinchObject=await page.evaluate(id=>{
+    const o=window.GuioneroStudio.exportState().boards.flatMap(b=>b.objects||[]).find(x=>x.id===id);
+    return {x:o.x,y:o.y,w:o.w,h:o.h};
+  },objectId);
+  assert.deepEqual(afterPinchObject,beforePinchObject,'Two-finger navigation must cancel object movement/resizing');
+  assert.equal(await canvasHash(),objectHashBefore,'Pinch takeover must not add accidental paint strokes');
+
+  // Return to drawing mode through the original Paint tool selector.
+  await page.locator('#androidPaintToolsToggle').tap();
+  await page.locator('#paintMode').selectOption('draw');
+  await page.locator('.android-paint-sheet-head button').tap();
+  pass('Paint one-finger object move/resize and safe two-finger gesture takeover');
+
   const cr=await page.locator('#paintCanvas').evaluate(el=>{
     const r=el.getBoundingClientRect(),v=document.querySelector('#paintViewport').getBoundingClientRect();
     const left=Math.max(r.left,v.left),top=Math.max(r.top,v.top),right=Math.min(r.right,v.right),bottom=Math.min(r.bottom,v.bottom);
