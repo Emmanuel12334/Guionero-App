@@ -238,6 +238,22 @@ try {
   const hashAfterPinch=await canvasHash();
   assert.notEqual(paintAfterPinch,paintBefore,'Paint pinch did not change zoom/pan');
   assert.equal(hashAfterPinch,hashBeforePinch,'Two-finger navigation must not draw on the canvas');
+  const panStart=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
+  const panZoomBefore=await page.evaluate(()=>window.GuioneroStudio.getPaintView().zoom);
+  const panCenter=await center(page,'#paintViewport');
+  const panA={x:panCenter.left+panCenter.width*.4,y:panCenter.top+panCenter.height*.45};
+  const panB={x:panA.x+72,y:panA.y};
+  await touch(paintCdp,'touchStart',[{id:24,...panA}]);
+  await touch(paintCdp,'touchStart',[{id:24,...panA},{id:25,...panB}]);
+  await touch(paintCdp,'touchMove',[{id:24,x:panA.x+35,y:panA.y+24},{id:25,x:panB.x+35,y:panB.y+24}]);
+  await touch(paintCdp,'touchEnd',[]);
+  await page.waitForTimeout(150);
+  const panEnd=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
+  const panZoomAfter=await page.evaluate(()=>window.GuioneroStudio.getPaintView().zoom);
+  assert.notEqual(panEnd,panStart,'Two-finger drag should pan the canvas');
+  assert.ok(Math.abs(panZoomAfter-panZoomBefore)<.02,'Two-finger translation should not change zoom');
+  assert.equal(await canvasHash(),hashBeforePinch,'Two-finger pan must not draw');
+  pass('Paint two-finger drag pans without changing zoom or pixels');
 
   const cr=await page.locator('#paintCanvas').evaluate(el=>{
     const r=el.getBoundingClientRect(),v=document.querySelector('#paintViewport').getBoundingClientRect();
@@ -263,6 +279,21 @@ try {
   const transformAfterDraw=await page.locator('#paintWorld').evaluate(el=>el.style.transform);
   assert.equal(transformAfterDraw,paintAfterPinch,'One-finger drawing should not move the canvas');
   pass('Paint pinch does not draw; one-finger draw, undo and redo work',paintBefore+' -> '+paintAfterPinch+'; canvas '+hashBeforePinch+' -> '+hashAfterPinch+' -> '+hashAfterDraw+' -> undo '+hashAfterUndo+' -> redo '+hashAfterRedo);
+  const zoomBefore=await page.evaluate(()=>window.GuioneroStudio.getPaintView().zoom);
+  await page.locator('#androidPaintZoomIn').tap();
+  await page.waitForFunction(()=>document.querySelector('#androidPaintZoomReadout').textContent!=='38%');
+  const zoomLabel=await page.locator('#androidPaintZoomReadout').innerText();
+  assert.match(zoomLabel,/^\d+%$/);
+  await page.locator('#androidPaintToolsToggle').tap();
+  await page.locator('#paintFit').tap();
+  await page.locator('.android-paint-sheet-head button').tap();
+  await page.waitForTimeout(100);
+  const fitZoom=await page.evaluate(()=>window.GuioneroStudio.getPaintView().zoom);
+  assert.ok(fitZoom>0&&fitZoom<=2,'Fit should calculate a valid zoom');
+  await page.locator('#androidPaintReset').tap();
+  await page.waitForTimeout(100);
+  assert.ok(Math.abs((await page.evaluate(()=>window.GuioneroStudio.getPaintView().zoom))-1)<.001,'Reset should return to 100%');
+  pass('Paint zoom readout, zoom in, Fit and 100% reset',Math.round(zoomBefore*100)+'% -> '+zoomLabel+' -> Fit '+Math.round(fitZoom*100)+'% -> 100%');
 
   assert.deepEqual(errors,[],'Runtime errors: '+errors.join(' | '));
   pass('Android runtime: no uncaught JavaScript errors');
