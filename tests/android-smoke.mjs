@@ -104,9 +104,13 @@ try {
   // Create two manual pages and verify that a real touchscreen drag joins compatible ports.
   await nodeToggle.click();
   await page.locator('#noteAddPage').click();
-  await page.locator('#inspectorClose').click();
+  const noteInspector=page.locator('#noteInspector');
+  await noteInspector.waitFor({state:'visible',timeout:5000});
+  const inspectorRect=await noteInspector.boundingBox();
+  assert.ok(inspectorRect&&inspectorRect.width<=393&&inspectorRect.height<=852,'Notes inspector must fit within the Android screen');
+  await page.locator('#inspectorClose').tap();
   await page.locator('#noteAddPage').click();
-  await page.locator('#inspectorClose').click();
+  await page.locator('#inspectorClose').tap();
   let pair = await page.evaluate(() => {
     const s=window.GuioneroStudio.exportState(), ids=s.pages.slice(-2).map(p=>p.id);
     s.positions=s.positions||{};
