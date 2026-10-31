@@ -237,6 +237,9 @@ async function nodeDropPoint(page) {
 
 async function dragNodeFromMenu(page, label, useTouch) {
   if (useTouch) {
+    await page.locator('#noteToolbarToggle').waitFor({ state: 'visible' });
+    await page.locator('#noteToolbarToggle').click();
+    await page.waitForFunction(() => document.getElementById('noteToolbarContent')?.hidden === false);
     await page.locator('#noteAddNode').click();
   } else {
     await page.locator('#noteCanvasWrap').evaluate(el => el.focus());
