@@ -2109,15 +2109,17 @@ if(androidPaintWork&&androidPaintViewport&&androidPaintCanvas){
  const androidPaintCenter=points=>{const a=[...points.values()];return{x:a.reduce((v,p)=>v+p.x,0)/a.length,y:a.reduce((v,p)=>v+p.y,0)/a.length};};
  const androidPaintDistance=points=>{const a=[...points.values()];if(a.length<2)return 1;return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1;};
  const androidPaintStop=e=>{e.preventDefault();e.stopPropagation();};
- androidPaintWork.addEventListener('pointerdown',e=>{
-  if(e.pointerType!=='touch'||e.target.closest('#paintLayersPanel'))return;
+ window.addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='touch'||!androidPaintWork.contains(e.target)||e.target.closest('#paintLayersPanel'))return;
   androidPaintPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(androidPaintPointers.size===2){androidPaintStop(e);androidPaintLocked=true;
    if(paintDrawing&&paintSnapshot){try{ctx.putImageData(paintSnapshot,0,0);}catch(_){}paintDrawing=false;paintPointerId=null;paintSnapshot=null;paintLineStart=null;lastPoint=null;}
    if(paintObjectDrag){
     const drag=paintObjectDrag,o=drag.o,s=drag.start;
     o.x=s.x0;o.y=s.y0;o.w=s.w;o.h=s.h;o.rotation=s.rotation;
-    paintObjectDrag=null;window.removeEventListener('pointermove',onPaintObjectDragMove);
+    paintObjectDrag=null;
+    window.removeEventListener('pointermove',onPaintObjectDragMove);
+    window.removeEventListener('pointerup',endPaintObjectDrag);
     renderPaintLayers();renderPaintObjectInspector();
    }
    paintPanning=false;paintPanStart=null;
@@ -2125,14 +2127,14 @@ if(androidPaintWork&&androidPaintViewport&&androidPaintCanvas){
    androidPaintGesture={startDistance:androidPaintDistance(androidPaintPointers),startZoom:paintZoom,worldX:(c.x-paintPan.x)/paintZoom,worldY:(c.y-paintPan.y)/paintZoom};
   }else if(androidPaintPointers.size>2||androidPaintLocked)androidPaintStop(e);
  },{capture:true,passive:false});
- androidPaintWork.addEventListener('pointermove',e=>{
+ window.addEventListener('pointermove',e=>{
   if(e.pointerType!=='touch'||!androidPaintPointers.has(e.pointerId))return;
   androidPaintPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(androidPaintGesture&&androidPaintPointers.size>=2){androidPaintStop(e);const c=androidPaintCenter(androidPaintPointers),r=androidPaintViewport.getBoundingClientRect();c.x-=r.left;c.y-=r.top;const z=Math.max(.04,Math.min(2,androidPaintGesture.startZoom*androidPaintDistance(androidPaintPointers)/androidPaintGesture.startDistance));paintZoom=z;paintPan={x:c.x-androidPaintGesture.worldX*z,y:c.y-androidPaintGesture.worldY*z};applyPaintCamera();}
   else if(androidPaintLocked)androidPaintStop(e);
  },{capture:true,passive:false});
  const androidPaintEnd=e=>{if(e.pointerType!=='touch'||!androidPaintPointers.has(e.pointerId))return;const wasLocked=androidPaintLocked;if(wasLocked)androidPaintStop(e);androidPaintPointers.delete(e.pointerId);if(androidPaintPointers.size===0){androidPaintGesture=null;androidPaintLocked=false;if(wasLocked)persist(false);}else if(androidPaintPointers.size<2){androidPaintGesture=null;androidPaintLocked=true;}};
- androidPaintWork.addEventListener('pointerup',androidPaintEnd,{capture:true});androidPaintWork.addEventListener('pointercancel',androidPaintEnd,{capture:true});
+ window.addEventListener('pointerup',androidPaintEnd,{capture:true});window.addEventListener('pointercancel',androidPaintEnd,{capture:true});
 }
 }
 {
