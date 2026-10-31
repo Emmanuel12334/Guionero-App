@@ -87,6 +87,17 @@ async function testParenthetical(page, label) {
   console.log('PASS Parentética Script ' + label);
 }
 
+async function touchTap(page, selector) {
+  const target = page.locator(selector), rect = await target.boundingBox();
+  assert.ok(rect, 'Elemento táctil visible: ' + selector);
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    const point = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 91, ...point }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  } finally { await cdp.detach(); }
+}
+
 async function paintPointerDrag(page, useTouch, from, to) {
   if (!useTouch) {
     await page.mouse.move(from.x, from.y);
@@ -110,8 +121,10 @@ async function paintPointerDrag(page, useTouch, from, to) {
 
 async function testPaintText(page, label, useTouch) {
   await page.locator('#tabPaint').click();
-  if (useTouch && await page.locator('#androidPaintToolsToggle').isVisible()) {
-    await page.locator('#androidPaintToolsToggle').click();
+  if (useTouch) {
+    await page.locator('#androidPaintToolsToggle').waitFor({ state: 'visible' });
+    await touchTap(page, '#androidPaintToolsToggle');
+    await page.waitForFunction(() => document.getElementById('paintToolbar')?.classList.contains('android-paint-tools-open'));
   }
   const toolbar = page.locator('#paintToolbar');
   if (await toolbar.evaluate(el => el.classList.contains('paint-toolbar-collapsed'))) await page.locator('#paintToolbarToggle').click();
