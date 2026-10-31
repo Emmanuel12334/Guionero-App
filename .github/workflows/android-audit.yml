@@ -2,7 +2,7 @@ name: Android mobile regression audit
 
 on:
   push:
-    branches: ["main", "android-review", "android-phone-layout-pass"]
+    branches: ["main", "android-review", "android-phone-layout-pass", "script-notes-paint-20261030"]
   workflow_dispatch:
 
 permissions:
@@ -27,3 +27,5 @@ jobs:
         run: npm run check --if-present
       - name: Run Android touch and desktop regression suite
         run: node tests/android-smoke.mjs
+      - name: Run Script, Notes and Paint feature regression suite
+        run: node tests/script-notes-paint-regression.mjs
