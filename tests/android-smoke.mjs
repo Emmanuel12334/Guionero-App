@@ -363,6 +363,7 @@ try {
   await page.locator('#androidPaintToolsToggle').tap();
   await page.locator('#paintMode').selectOption('draw');
   await page.locator('.android-paint-sheet-head button[aria-label="Cerrar herramientas"]').tap();
+  assert.equal(await page.locator('#paintToolbar').evaluate(el=>el.classList.contains('android-paint-tools-open')),false,'Closing Paint drawer should remove its open state');
   pass('Paint one-finger object move/resize and safe two-finger gesture takeover');
 
   const cr=await page.locator('#paintCanvas').evaluate(el=>{
@@ -379,6 +380,15 @@ try {
   const hashAfterDraw=await canvasHash();
   assert.notEqual(hashAfterDraw,hashAfterPinch,'One-finger touch did not draw on Paint');
   await page.locator('#androidPaintToolsToggle').tap();
+  await page.waitForFunction(()=>document.querySelector('#paintToolbar').classList.contains('android-paint-tools-open'));
+  const undoDrawerState=await page.evaluate(()=>{
+    const ids=['paintToolbar','androidPaintUndoQuick','androidPaintRedoQuick'];
+    return Object.fromEntries(ids.map(id=>{
+      const el=document.getElementById(id),s=el&&getComputedStyle(el),r=el?.getBoundingClientRect();
+      return [id,{exists:!!el,display:s?.display,visibility:s?.visibility,rect:r?[r.x,r.y,r.width,r.height]:null,classes:el?.className}];
+    }));
+  });
+  assert.ok(await page.locator('#androidPaintUndoQuick').isVisible(),'Quick Undo should be visible in the Paint drawer: '+JSON.stringify(undoDrawerState));
   await page.locator('#androidPaintUndoQuick').tap();
   await page.locator('.android-paint-sheet-head > button[aria-label="Cerrar herramientas"]').tap();
   await page.waitForTimeout(350);
