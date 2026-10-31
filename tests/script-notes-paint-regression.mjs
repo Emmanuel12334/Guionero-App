@@ -34,7 +34,7 @@ try {
   async function chooseType(type){
     const line=await activeLine();
     await line.click();
-    await line.press('Enter');
+    await page.keyboard.press('Tab');
     await page.locator('#picker [data-pick="'+type+'"]').waitFor({state:'visible',timeout:3000});
     await page.locator('#picker [data-pick="'+type+'"]').click();
     await page.waitForTimeout(30);
