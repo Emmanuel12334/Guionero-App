@@ -118,7 +118,20 @@ try {
   await noteInspector.waitFor({state:'visible',timeout:5000});
   const inspectorRect=await noteInspector.boundingBox();
   assert.ok(inspectorRect&&inspectorRect.width<=393&&inspectorRect.height<=852,'Notes inspector must fit within the Android screen');
+  const noteEditor=page.locator('#inspectorContent .node-page-editor');
+  await noteEditor.waitFor({state:'visible',timeout:5000});
+  await noteEditor.locator('.script-line').first().click();
+  await page.keyboard.press('End');
+  await page.keyboard.type('Notes Android edit test');
+  await page.waitForTimeout(180);
+  assert.ok((await noteEditor.innerText()).includes('Notes Android edit test'),'Notes page editor should accept keyboard input');
   await page.locator('#inspectorClose').tap();
+  const noteModelText=await page.evaluate(()=>{
+    const s=window.GuioneroStudio.exportState();
+    const p=s.pages[s.pages.length-1];
+    return (p?.blocks||[]).map(b=>b.text||'').join(' ');
+  });
+  assert.ok(noteModelText.includes('Notes Android edit test'),'Notes edit should sync back into the Node page model');
   await page.locator('#noteAddPage').click();
   await page.locator('#inspectorClose').tap();
   // Close the floating options sheet so it no longer overlays graph connectors.
