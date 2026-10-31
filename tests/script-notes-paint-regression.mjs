@@ -181,6 +181,7 @@ try {
   assert.equal(await page.locator('#paintExport').innerText(),'EXPORTAR IMAGEN');
   await page.locator('#paintTextBtn').click();
   const canvas=page.locator('#paintCanvas');
+  assert.equal(await canvas.evaluate(el=>getComputedStyle(el).pointerEvents),'auto','The Text tool must make the canvas receive pointer input');
   const box=await canvas.boundingBox();
   await page.mouse.click(box.x+box.width*.45,box.y+box.height*.35);
   const textObject=page.locator('.paint-text-content[contenteditable="true"]').last();
