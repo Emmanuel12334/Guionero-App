@@ -147,6 +147,17 @@ async function testPaintText(page, label, useTouch) {
     await touchTap(page, '#androidPaintToolsToggle');
     await page.waitForFunction(() => document.getElementById('paintToolbar')?.classList.contains('android-paint-tools-open'));
   }
+  if (useTouch && !(await page.locator('#paintTextAlign').isVisible())) {
+    const diagnostic = await page.evaluate(() => {
+      const el = document.getElementById('paintTextAlign'), chain = [];
+      for (let node = el; node && node.id !== 'panePaint'; node = node.parentElement) {
+        const cs = getComputedStyle(node), rect = node.getBoundingClientRect();
+        chain.push({ id: node.id, cls: node.className?.baseVal || node.className, display: cs.display, visibility: cs.visibility, opacity: cs.opacity, rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height }, hidden: node.hidden });
+      }
+      return { body: document.body.className, toolbar: document.getElementById('paintToolbar')?.className, align: { display: getComputedStyle(el).display, visibility: getComputedStyle(el).visibility }, chain };
+    });
+    throw new Error('Android: control de alineación no visible: ' + JSON.stringify(diagnostic));
+  }
   await page.locator('#paintTextAlign').selectOption('center');
   await page.locator('#paintFontSize').fill('48');
   await page.locator('#paintFontSize').press('Tab');
