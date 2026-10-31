@@ -1,0 +1,26 @@
+name: Guionero browser validation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check HTML and inline JavaScript
+        run: node scripts/check-html.js
+      - name: Install Playwright
+        run: npm install --no-save --no-package-lock playwright@1.64.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run desktop and Android browser tests
+        run: node tests/guionero-browser-smoke.cjs
