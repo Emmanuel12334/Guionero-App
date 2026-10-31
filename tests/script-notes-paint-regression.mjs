@@ -107,13 +107,13 @@ try {
   });
   assert.deepEqual(history.characters,['JULIO']);
   await enterNext();
-  assert.equal((await activeLine()).getAttribute('data-type'),'ACTION','Enter after a character must not choose Dialogue or Parenthetical');
+  assert.equal(await (await activeLine()).getAttribute('data-type'),'ACTION','Enter after a character must not choose Dialogue or Parenthetical');
   await chooseType('PARENTHETICAL');
   await fillActive('Está feliz, pero tembloroso');
   await enterNext();
   const parenthetical=page.locator('#script .script-line[data-type="PARENTHETICAL"]').last();
   assert.equal((await parenthetical.innerText()).trim(),'(Está feliz, pero tembloroso)');
-  assert.equal((await activeLine()).getAttribute('data-type'),'ACTION','Enter after Parenthetical must not choose Dialogue');
+  assert.equal(await (await activeLine()).getAttribute('data-type'),'ACTION','Enter after Parenthetical must not choose Dialogue');
   await saveProject();
   console.log('PASS: character history, manual Parenthetical and neutral Enter behavior');
 
