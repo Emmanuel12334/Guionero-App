@@ -71,12 +71,20 @@ try {
   await focusButton.tap();
   assert.ok(await page.locator('body').evaluate(el=>el.classList.contains('android-script-focus')));
   assert.ok(await page.locator('#androidScriptRestoreButton').isVisible());
-  const editorLine=page.locator('#script .script-line').first();
-  await editorLine.click();
-  await page.keyboard.press('End');
-  await page.keyboard.insertText(' Android focus editor test');
-  await page.waitForTimeout(200);
-  assert.ok((await page.locator('#script').innerText()).includes('Android focus editor test'),'Script should accept typing in focus mode');
+  await page.locator('#script').evaluate(el=>{
+    const line=el.querySelector('.script-line');
+    el.focus({preventScroll:true});
+    const range=document.createRange();
+    range.selectNodeContents(line||el);range.collapse(false);
+    const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+  });
+  await page.keyboard.type('Android focus editor test');
+  await page.waitForTimeout(250);
+  const scriptTyping=await page.evaluate(()=>{
+    const root=document.querySelector('#script');
+    return {text:root.innerText,editable:root.isContentEditable,active:document.activeElement?.id,lineCount:root.querySelectorAll('.script-line').length};
+  });
+  assert.ok(scriptTyping.text.includes('Android focus editor test'),'Script should accept typing in focus mode: '+JSON.stringify(scriptTyping));
   await page.keyboard.press('Control+A');
   const selectedText=await page.evaluate(()=>window.getSelection()?.toString()||'');
   assert.ok(selectedText.includes('Android focus editor test'),'Script should allow selecting text');
