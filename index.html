@@ -2323,7 +2323,7 @@ $('projectSaveAsBtn')?.addEventListener('click',saveAsFile);$('savedScriptsBrows
 // Capture the click before legacy Script/Node listeners. This is the single authoritative new-project path.
 if(oldNew&&!oldNew.dataset.safeNewProject){oldNew.dataset.safeNewProject='1';oldNew.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();if(oldNew.dataset.creatingProject==='1')return;oldNew.dataset.creatingProject='1';createNewProject().finally(()=>{if(!switchingProject){oldNew.dataset.creatingProject='0';oldNew.disabled=false;}});},true);}
 window.addEventListener('beforeunload',()=>{if(dirty&&!switchingProject){try{const snap=currentSnapshot(window.__guioneroSafeStorage.getItem(ACTIVE_KEY));saveFallback(snap);}catch(_){}}});
-libraryReady=initLibrary().then(()=>{const id=window.__guioneroSafeStorage.getItem(ACTIVE_KEY),active=libraryCache.find(r=>r.id===id);lastSuccessfulSaveAt=Number(active?.updatedAt)||Date.now();setSaveIndicator(!dirty);if(active)window.dispatchEvent(new CustomEvent('guionero-project-saved',{detail:{id,blocks:active.localState?.blocks||[],title:active.title}}));return true;});
+libraryReady=initLibrary().then(()=>{const id=window.__guioneroSafeStorage.getItem(ACTIVE_KEY),active=libraryCache.find(r=>r.id===id);lastSuccessfulSaveAt=Number(active?.updatedAt)||Date.now();setSaveIndicator(!dirty);if(active)window.dispatchEvent(new CustomEvent('guionero-project-saved',{detail:{id,blocks:active.localState?.blocks||[],title:active.title}}));return true;}).catch(e=>{setSaveIndicator(false,'No guardado');throw e;});
 })();
 </script>
 <script>
@@ -2912,8 +2912,8 @@ body.android-device #paintLayersPanel input[type="range"] {
  document.addEventListener('click',event=>{const button=event.target.closest?.('#picker [data-pick]');if(!button||!['SCENE','CHARACTER'].includes(button.dataset.pick))return;setTimeout(()=>{if(picker.classList.contains('visible')&&picker.querySelector('[data-pick]'))return;showSuggestions(button.dataset.pick);},0);},true);
  document.addEventListener('keydown',event=>{if(event.key==='Enter'&&picker.classList.contains('visible')&&document.activeElement?.matches?.('.history-option[data-history-value]')){event.preventDefault();document.activeElement.click();}});
  document.addEventListener('pointerdown',event=>{if(!picker.classList.contains('visible')||picker.contains(event.target))return;closeSuggestions();},true);
- function formatParenthetical(line){if(!line||line.dataset.type!=='PARENTHETICAL')return;const value=String(line.textContent||'').trim();if(!value||value.startsWith('(')&&value.endsWith(')'))return;line.textContent=(value.startsWith('(')?value:'('+value)+(value.endsWith(')')?'':')');line.dispatchEvent(new Event('input',{bubbles:true}));}
- script.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey)formatParenthetical(script.querySelector('.script-line[data-active="true"]'));},true);
+ function formatParenthetical(line,moveCaret=false){if(!line||line.dataset.type!=='PARENTHETICAL')return;const value=String(line.textContent||'').trim();if(!value||value.startsWith('(')&&value.endsWith(')'))return;line.textContent=(value.startsWith('(')?value:'('+value)+(value.endsWith(')')?'':')');if(moveCaret){script.focus({preventScroll:true});const range=document.createRange();range.selectNodeContents(line);range.collapse(false);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);}line.dispatchEvent(new Event('input',{bubbles:true}));}
+ script.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey)formatParenthetical(script.querySelector('.script-line[data-active="true"]'),true);},true);
  document.addEventListener('pointerdown',event=>{if(!script.contains(event.target))formatParenthetical(script.querySelector('.script-line[data-active="true"]'));},true);
  window.GuioneroManualHistory={show:showSuggestions};
 })();
