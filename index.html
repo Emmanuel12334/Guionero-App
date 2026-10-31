@@ -3442,6 +3442,9 @@ body.android-device #paintToolbar {scrollbar-width:thin}
   bindAndroidDockToggle(toolsButton,()=>paintToolbar.classList.contains('android-paint-tools-open'),setTools);
   bindAndroidDockToggle(layersButton,()=>work.classList.contains('android-paint-layers-open'),setLayers);
   closeTools.addEventListener('click',()=>setTools(false));
+  // Give the canvas back its full touch area immediately after choosing text.
+  $('paintTextBtn')?.addEventListener('click',()=>setTools(false));
+  $('paintTool')?.addEventListener('change',()=>{if($('paintTool').value==='text')setTools(false);});
   closeLayers?.addEventListener('click',()=>setLayers(false));
   document.addEventListener('pointerdown',e=>{
    if(!pane.classList.contains('active'))return;
