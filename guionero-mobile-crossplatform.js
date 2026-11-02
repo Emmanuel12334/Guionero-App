@@ -160,7 +160,6 @@
   }
 
   const shapeCanvas = $('paintCanvas');
-  const opacityControl = $('guioneroMobilePaintShapeOpacity');
   if (shapeCanvas && !shapeCanvas.dataset.mobileShapeHandlers) {
     shapeCanvas.dataset.mobileShapeHandlers = 'true';
     const shapeContext = shapeCanvas.getContext('2d');
@@ -250,10 +249,13 @@
   }
 
   const shapeMenu = $('guioneroMobilePaintShapeMenu');
-  if (shapeMenu && !opacityControl) {
+  if (shapeMenu && !$('guioneroMobilePaintShapeOptions')) {
+    const panel = document.createElement('div');
+    panel.id = 'guioneroMobilePaintShapeOptions';
+    panel.className = 'guionero-mobile-shape-options';
+    panel.hidden = true;
     const label = document.createElement('label');
-    label.textContent = 'Transparencia';
-    label.style.cssText = 'display:flex;flex-direction:column;gap:4px;min-width:115px;padding:4px 8px;color:var(--muted);font:11px system-ui;';
+    label.textContent = 'Transparencia de la forma';
     const range = document.createElement('input');
     range.type = 'range';
     range.id = 'guioneroMobilePaintShapeOpacity';
@@ -262,7 +264,13 @@
     range.value = '100';
     range.setAttribute('aria-label', 'Transparencia de las formas');
     label.appendChild(range);
-    shapeMenu.appendChild(label);
+    panel.appendChild(label);
+    paintPane.appendChild(panel);
+    const syncShapeOptions = () => {
+      panel.hidden = !['rect', 'ellipse'].includes($('paintTool')?.value);
+    };
+    $('paintTool')?.addEventListener('change', syncShapeOptions);
+    syncShapeOptions();
   }
 
 })();
