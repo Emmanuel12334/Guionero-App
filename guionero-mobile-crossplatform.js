@@ -138,4 +138,124 @@
       if (menu && !menu.hidden && !menu.contains(event.target) && !event.target.closest('#guioneroMobilePaintShapes')) menu.hidden = true;
     }, true);
   }
+  /* Add real rectangle/ellipse drawing to the existing active raster layer.
+     It uses the app's undo and save bridge; imported projects remain unchanged. */
+  const paintTool = $('paintTool');
+  if (paintTool) {
+    [['rect', 'Rectángulo'], ['ellipse', 'Elipse']].forEach(([value, label]) => {
+      if (![...paintTool.options].some(option => option.value === value)) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        paintTool.appendChild(option);
+      }
+    });
+  }
+
+  const shapeCanvas = $('paintCanvas');
+  const opacityControl = $('guioneroMobilePaintShapeOpacity');
+  if (shapeCanvas && !shapeCanvas.dataset.mobileShapeHandlers) {
+    shapeCanvas.dataset.mobileShapeHandlers = 'true';
+    const shapeContext = shapeCanvas.getContext('2d');
+    let shapeDrag = null;
+
+    const getShapePoint = event => {
+      const rect = shapeCanvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * shapeCanvas.width / Math.max(1, rect.width),
+        y: (event.clientY - rect.top) * shapeCanvas.height / Math.max(1, rect.height)
+      };
+    };
+
+    const drawShapePreview = event => {
+      if (!shapeDrag || event.pointerId !== shapeDrag.pointerId) return;
+      const current = getShapePoint(event);
+      const left = Math.min(shapeDrag.start.x, current.x);
+      const top = Math.min(shapeDrag.start.y, current.y);
+      const width = Math.abs(current.x - shapeDrag.start.x);
+      const height = Math.abs(current.y - shapeDrag.start.y);
+      shapeContext.putImageData(shapeDrag.before, 0, 0);
+      shapeContext.save();
+      shapeContext.globalAlpha = Math.max(0.05, Math.min(1, Number(opacityControl?.value ?? 100) / 100));
+      shapeContext.strokeStyle = $('paintColor')?.value || '#202124';
+      shapeContext.lineWidth = Math.max(1, Number($('paintSize')?.value) || 5);
+      shapeContext.lineJoin = 'round';
+      shapeContext.lineCap = 'round';
+      shapeContext.beginPath();
+      if (shapeDrag.tool === 'ellipse') {
+        shapeContext.ellipse(left + width / 2, top + height / 2, Math.max(0.5, width / 2), Math.max(0.5, height / 2), 0, 0, Math.PI * 2);
+      } else {
+        shapeContext.rect(left, top, width, height);
+      }
+      shapeContext.stroke();
+      shapeContext.restore();
+    };
+
+    const finishShape = event => {
+      if (!shapeDrag || event.pointerId !== shapeDrag.pointerId) return;
+      if (event.type === 'pointercancel') {
+        shapeContext.putImageData(shapeDrag.before, 0, 0);
+      } else {
+        drawShapePreview(event);
+        try { window.GuioneroStudio?.exportState?.(); } catch (_) {}
+      }
+      shapeDrag = null;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    window.addEventListener('pointerdown', event => {
+      if (!shapeCanvas.contains(event.target)) {
+        if (shapeDrag && event.pointerType === 'touch' && event.pointerId !== shapeDrag.pointerId) {
+          shapeContext.putImageData(shapeDrag.before, 0, 0);
+          shapeDrag = null;
+        }
+        return;
+      }
+      const selectedTool = $('paintTool')?.value;
+      if (!['rect', 'ellipse'].includes(selectedTool) || $('paintMode')?.value !== 'draw') return;
+      if (shapeDrag) {
+        shapeContext.putImageData(shapeDrag.before, 0, 0);
+        shapeDrag = null;
+        return;
+      }
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      try { window.GuioneroStudio?.recordPaintUndo?.(); } catch (_) {}
+      shapeDrag = {
+        pointerId: event.pointerId,
+        tool: selectedTool,
+        start: getShapePoint(event),
+        before: shapeContext.getImageData(0, 0, shapeCanvas.width, shapeCanvas.height)
+      };
+      try { shapeCanvas.setPointerCapture(event.pointerId); } catch (_) {}
+    }, true);
+
+    window.addEventListener('pointermove', event => {
+      if (!shapeDrag || event.pointerId !== shapeDrag.pointerId) return;
+      event.preventDefault();
+      event.stopPropagation();
+      drawShapePreview(event);
+    }, true);
+    window.addEventListener('pointerup', finishShape, true);
+    window.addEventListener('pointercancel', finishShape, true);
+  }
+
+  const shapeMenu = $('guioneroMobilePaintShapeMenu');
+  if (shapeMenu && !opacityControl) {
+    const label = document.createElement('label');
+    label.textContent = 'Transparencia';
+    label.style.cssText = 'display:flex;flex-direction:column;gap:4px;min-width:115px;padding:4px 8px;color:var(--muted);font:11px system-ui;';
+    const range = document.createElement('input');
+    range.type = 'range';
+    range.id = 'guioneroMobilePaintShapeOpacity';
+    range.min = '5';
+    range.max = '100';
+    range.value = '100';
+    range.setAttribute('aria-label', 'Transparencia de las formas');
+    label.appendChild(range);
+    shapeMenu.appendChild(label);
+  }
+
 })();
