@@ -3328,7 +3328,7 @@ body.android-device #paintToolbar {scrollbar-width:thin}
  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar();});
 
  // Script focus mode retains the original editable DOM, selection and event listeners.
- const head=document.querySelector('#workspace .workspace-head');
+ const head=document.querySelector('#workspace .workspace-head')||$('workspace');
  if(head&&!$('androidScriptFocusButton')){
   const button=document.createElement('button');
   button.type='button';button.id='androidScriptFocusButton';
@@ -3346,7 +3346,7 @@ body.android-device #paintToolbar {scrollbar-width:thin}
   };
   button.addEventListener('click',()=>setFocus(!document.body.classList.contains('android-script-focus')));
   restore.addEventListener('click',()=>setFocus(false));
-  head.appendChild(button);document.querySelector('.main')?.appendChild(restore);
+  const paper=$('paper');if(paper?.parentNode===head)head.insertBefore(button,paper);else head.appendChild(button);document.querySelector('.main')?.appendChild(restore);
  }
  const toolbar=$('scriptFormatToolbar');
  if(toolbar&&!$('androidScriptFormatDetails')){
