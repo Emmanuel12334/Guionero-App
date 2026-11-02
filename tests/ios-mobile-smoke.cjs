@@ -75,9 +75,14 @@ const server = http.createServer((req, res) => {
     assert.ok(shell.horizontalOverflow <= 2, 'iPhone page must not overflow horizontally: ' + shell.horizontalOverflow);
 
     // Script's contextual buttons must use the real screenplay type picker.
-    const tools = await page.locator('#guioneroMobileScriptToolbar button').allTextContents();
-    for (const label of ['Scene', 'Action', 'Character', 'Parenthetical', 'Dialogue', 'Transition']) {
-      assert.ok(tools.some(value => value.includes(label)), 'Script toolbar must include ' + label);
+    const tools = await page.locator('#guioneroMobileScriptToolbar button').evaluateAll(nodes => nodes.map(node => ({
+      type: node.dataset.scriptType,
+      label: node.querySelector('.mobile-tool-label')?.textContent || '',
+      aria: node.getAttribute('aria-label') || ''
+    })));
+    for (const [type, label] of [['SCENE','Scene'],['ACTION','Action'],['CHARACTER','Character'],['PARENTHETICAL','Parenthetical'],['DIALOGUE','Dialogue'],['TRANSITION','Transition']]) {
+      assert.ok(tools.some(item => item.type === type && item.label === label && item.aria === label),
+        'Script toolbar must include visible/accessibility label ' + label + ': ' + JSON.stringify(tools));
     }
     await page.locator('#guioneroMobileScriptToolbar [data-script-type="ACTION"]').tap();
     await page.waitForFunction(() => document.querySelector('#script .script-line[data-type="ACTION"]'), null, { timeout: 5000 });
