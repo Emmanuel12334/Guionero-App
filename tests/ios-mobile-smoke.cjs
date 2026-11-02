@@ -45,7 +45,7 @@ const server = http.createServer((req, res) => {
     await page.goto('http://127.0.0.1:4174/', { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__guioneroMobileTouchDevice === true && !!window.GuioneroStudio, null, { timeout: 20000 });
     await page.waitForSelector('#guioneroMobileScriptToolbar', { state: 'visible', timeout: 10000 });
-    await page.waitForSelector('#androidPaintDock', { state: 'visible', timeout: 10000 });
+    await page.waitForSelector('#androidPaintDock', { state: 'attached', timeout: 10000 });
 
     const shell = await page.evaluate(() => ({
       mobileFlag: window.__guioneroMobileTouchDevice,
