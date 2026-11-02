@@ -262,3 +262,39 @@ body.guionero-ios-device .guionero-mobile-shape-menu {
     min-height: 40px;
   }
 }
+
+
+/* Contextual shape options remain reachable after the shape picker closes. */
+body.guionero-mobile-device .guionero-mobile-shape-options {
+  position: fixed;
+  z-index: 1002;
+  left: 50%;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 72px);
+  display: flex;
+  align-items: center;
+  min-width: 190px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgba(0,0,0,.2);
+  transform: translateX(-50%);
+}
+body.guionero-mobile-device .guionero-mobile-shape-options[hidden] {
+  display: none !important;
+}
+body.guionero-mobile-device .guionero-mobile-shape-options label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+body.guionero-mobile-device .guionero-mobile-shape-options input {
+  width: 100%;
+  min-height: 34px;
+  touch-action: pan-x;
+}
