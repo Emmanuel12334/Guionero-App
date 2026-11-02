@@ -485,6 +485,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
 @media(max-width:650px){.guionero-overlay{padding:8px}.guionero-dialog{max-height:calc(100dvh - 16px);border-radius:11px}.guionero-dialog-header{padding:12px 13px}.guionero-dialog-body{padding:12px}.guionero-dialog-title{font-size:16px}.guionero-structure-list,.guionero-settings-sections{grid-template-columns:1fr}.guionero-structure-card{min-height:auto;padding:12px}.guionero-dialog-footer{padding:10px 12px}.guionero-structure-detail h3{font-size:18px}}
 </style>
 
+<link rel="stylesheet" href="./guionero-mobile-crossplatform.css">
 </head>
 <body data-theme="light">
 <script id="guionero-android-capability-detection">
@@ -493,12 +494,17 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
  const touch=Number(nav.maxTouchPoints||0)>0||('ontouchstart'in window);
  const coarse=!!(window.matchMedia?.('(pointer: coarse)').matches||window.matchMedia?.('(any-pointer: coarse)').matches);
  const android=/Android/i.test(platform)||(/Android/i.test(ua)&&touch);
- const enabled=android&&touch;
+ const ios=/iPhone|iPad|iPod/i.test(ua)||((/Macintosh/i.test(ua)||/MacIntel/i.test(platform))&&touch);
+ const enabled=(android||ios)&&touch;
+ window.__guioneroMobileTouchDevice=enabled;
+ window.__guioneroIOSDevice=enabled&&ios;
+ /* Keep the legacy flag as a compatibility bridge for existing Android-tested touch handlers. */
  window.__guioneroAndroidTouchDevice=enabled;
  window.__guioneroAndroidCoarsePointer=coarse;
  if(!enabled)return;
  const body=document.body,root=document.documentElement;
- body.classList.add('android-device');
+ body.classList.add('android-device','guionero-mobile-device');
+ if(ios)body.classList.add('guionero-ios-device');
  const update=()=>{
   const w=window.innerWidth||0,h=window.innerHeight||0;
   const tablet=Math.min(w,h)>=600||nav.userAgentData?.mobile===false;
@@ -2652,7 +2658,7 @@ body.android-device .android-paint-tools-body .android-paint-history button{flex
 <script id="guionero-android-touch-update-script">
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
-if(!/Android/i.test(navigator.userAgent||''))return;
+if(window.__guioneroMobileTouchDevice!==true)return;
 document.body.classList.add('android-device');
 ['tabNote','paneNote','tabPaint','panePaint'].forEach(id=>$(id)?.removeAttribute('hidden'));
 const projectDock=$('projectManagementDock');
@@ -3517,5 +3523,6 @@ body.android-device #paintToolbar {scrollbar-width:thin}
   #script .script-line[data-type="PARENTHETICAL"]{width:72%;margin:0 0 2px 8%;text-align:left}
 }
 </style>
+<script src="./guionero-mobile-crossplatform.js" defer></script>
 </body>
 </html>
