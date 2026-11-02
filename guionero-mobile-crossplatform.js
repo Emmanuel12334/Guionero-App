@@ -176,7 +176,7 @@
       const height = Math.abs(current.y - shapeDrag.start.y);
       shapeContext.putImageData(shapeDrag.before, 0, 0);
       shapeContext.save();
-      shapeContext.globalAlpha = Math.max(0.05, Math.min(1, Number(opacityControl?.value ?? 100) / 100));
+      shapeContext.globalAlpha = Math.max(0.05, Math.min(1, Number($('guioneroMobilePaintShapeOpacity')?.value ?? 100) / 100));
       shapeContext.strokeStyle = $('paintColor')?.value || '#202124';
       shapeContext.lineWidth = Math.max(1, Number($('paintSize')?.value) || 5);
       shapeContext.lineJoin = 'round';
