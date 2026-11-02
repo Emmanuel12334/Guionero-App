@@ -80,9 +80,17 @@ const server = http.createServer((req, res) => {
       label: node.querySelector('.mobile-tool-label')?.textContent || '',
       aria: node.getAttribute('aria-label') || ''
     })));
-    for (const [type, label] of [['SCENE','Scene'],['ACTION','Action'],['CHARACTER','Character'],['PARENTHETICAL','Parenthetical'],['DIALOGUE','Dialogue'],['TRANSITION','Transition']]) {
-      assert.ok(tools.some(item => item.type === type && item.label === label && item.aria === label),
-        'Script toolbar must include visible/accessibility label ' + label + ': ' + JSON.stringify(tools));
+    const expectedLabels = [
+      ['SCENE',['Scene','Escena']],
+      ['ACTION',['Action','Acción']],
+      ['CHARACTER',['Character','Personaje']],
+      ['PARENTHETICAL',['Parenthetical','Paréntesis']],
+      ['DIALOGUE',['Dialogue','Diálogo']],
+      ['TRANSITION',['Transition','Transición']]
+    ];
+    for (const [type, labels] of expectedLabels) {
+      assert.ok(tools.some(item => item.type === type && labels.includes(item.label) && item.aria === item.label),
+        'Script toolbar must include localized visible/accessibility label for ' + type + ': ' + JSON.stringify(tools));
     }
     await page.locator('#guioneroMobileScriptToolbar [data-script-type="ACTION"]').tap();
     await page.waitForFunction(() => document.querySelector('#script .script-line[data-type="ACTION"]'), null, { timeout: 5000 });
