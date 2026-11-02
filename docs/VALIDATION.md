@@ -25,3 +25,19 @@ La auditoría automatizada se ejecuta con Chromium/Playwright emulando teléfono
 - Una de las pruebas de humo mostró que el almacenamiento persistente estaba bloqueado en el entorno de prueba. En navegadores que bloqueen el almacenamiento, la aplicación puede mantener datos solo durante la sesión y debe exportarse el proyecto antes de cerrar.
 
 Por estas razones, el paquete es una base de código lista para subir y seguir probando, no una garantía de ausencia total de errores.
+
+
+## Actualización móvil Android + iPhone (2026-11-01)
+
+- Se amplió la detección de capacidades táctiles para reconocer Android y perfiles iPhone/iPadOS en navegadores que exponen Pointer Events. La marca interna anterior se conserva como puente de compatibilidad para reutilizar la navegación móvil, el editor y los gestos existentes.
+- Se agregaron controles contextuales de formato para Script y accesos móviles a dibujo, texto, imágenes, desplazamiento, cuadrícula y formas en Paint. Los selectores existentes continúan siendo los controles reales del proyecto.
+- Se añadieron trazos de rectángulo y elipse sobre la capa raster activa, con ajuste de transparencia. Son contenido editable de la capa, pero no objetos vectoriales independientes.
+- Se añadieron estilos táctiles y de área segura limitados a la capa móvil; la vista de escritorio no recibe la nueva clase de plataforma.
+- La validación automatizada incorpora una prueba Playwright WebKit con perfil de iPhone además de las pruebas de escritorio y Android. WebKit en CI sirve como aproximación del motor de Safari; no sustituye pruebas en un iPhone físico ni certifica todos los teclados y navegadores.
+
+### Límites funcionales pendientes
+
+- Paint sigue utilizando la estructura de tablero y capas que ya guardan los proyectos. El área principal conserva dimensiones finitas; el código existente puede ampliarla al dibujar hacia abajo/derecha, pero no hay todavía un plano matemáticamente infinito que pueda extenderse en cualquier dirección.
+- Las formas recién añadidas se rasterizan en la capa activa; todavía no se pueden seleccionar, girar o redimensionar como objetos vectoriales separados.
+- La opacidad de esas formas se controla al dibujarlas. No se ha agregado todavía un control de opacidad individual a cada trazo.
+- No se ejecutaron pruebas físicas en teléfonos Android ni iPhone en esta sesión. El resultado de Playwright debe distinguirse de esas pruebas físicas.
