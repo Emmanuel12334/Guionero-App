@@ -1,0 +1,300 @@
+/* Guionero mobile extension: Android + iPhone/iPad browser only.
+   The desktop DOM and styles remain untouched. */
+body.guionero-mobile-device {
+  --guionero-mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+body.guionero-mobile-device .app {
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+}
+body.guionero-mobile-device .main,
+body.guionero-mobile-device .studio-pane {
+  min-width: 0;
+  min-height: 0;
+}
+body.guionero-mobile-device .studio-tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  height: calc(60px + var(--guionero-mobile-safe-bottom));
+  padding: 6px 8px calc(6px + var(--guionero-mobile-safe-bottom));
+  padding-bottom: calc(6px + var(--guionero-mobile-safe-bottom));
+  overflow: visible;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--panel);
+}
+body.guionero-mobile-device .studio-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 5px;
+  font-size: 12px;
+  touch-action: manipulation;
+}
+body.guionero-mobile-device .studio-pane {
+  padding-bottom: calc(60px + var(--guionero-mobile-safe-bottom));
+}
+body.guionero-mobile-device .sidebar {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: var(--guionero-mobile-safe-bottom);
+  -webkit-overflow-scrolling: touch;
+}
+body.guionero-mobile-device .sidebar.open {
+  box-shadow: 0 0 0 100vmax rgba(0,0,0,.38), 8px 0 30px rgba(0,0,0,.16);
+}
+body.guionero-mobile-device button,
+body.guionero-mobile-device select,
+body.guionero-mobile-device input[type="color"],
+body.guionero-mobile-device input[type="number"] {
+  touch-action: manipulation;
+}
+body.guionero-mobile-device .workspace {
+  min-height: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+body.guionero-mobile-device #script {
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+body.guionero-mobile-device #picker,
+body.guionero-mobile-device .history-suggestions,
+body.guionero-mobile-device .node-add-menu,
+body.guionero-mobile-device .paint-brush-menu {
+  max-height: calc(var(--android-visual-height, 100dvh) - env(safe-area-inset-top, 0px) - var(--guionero-mobile-safe-bottom) - 18px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Script's mobile-first contextual format bar. */
+body.guionero-mobile-device #guioneroMobileScriptToolbar {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 8px;
+  padding: 7px 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  touch-action: pan-x;
+}
+body.guionero-mobile-device #guioneroMobileScriptToolbar button {
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+body.guionero-mobile-device #guioneroMobileScriptToolbar button:active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+body.guionero-mobile-device #guioneroMobileScriptToolbar .mobile-tool-icon {
+  margin-right: 5px;
+  color: var(--accent);
+}
+
+/* Paint: a white dotted infinite-feeling navigation surface. Content stays editable
+   in its original layers and image/text object model; this does not flatten projects. */
+body.guionero-mobile-device #paintWorkarea {
+  background-color: #fff !important;
+  background-image: radial-gradient(rgba(96, 104, 116, .28) 1px, transparent 1.2px) !important;
+  background-size: 24px 24px !important;
+  background-position: 0 0 !important;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+body.guionero-mobile-device #paintViewport {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: transparent !important;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+body.guionero-mobile-device #paintBoard {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible;
+  touch-action: none;
+}
+body.guionero-mobile-device #paintBoardName {
+  display: none !important;
+}
+body.guionero-mobile-device #paintCanvas {
+  background: transparent !important;
+  touch-action: none;
+}
+body.guionero-mobile-device.guionero-paint-grid-hidden #paintWorkarea {
+  background-image: none !important;
+}
+body.guionero-mobile-device .android-paint-dock {
+  display: flex;
+  max-width: calc(100vw - 12px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  padding: 5px 7px;
+  gap: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+body.guionero-mobile-device .android-paint-dock::-webkit-scrollbar {
+  display: none;
+}
+body.guionero-mobile-device .android-paint-dock button {
+  flex: 0 0 58px;
+  min-width: 58px;
+  min-height: 46px;
+  padding: 4px 3px;
+  font-size: 10px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+body.guionero-mobile-device .guionero-mobile-shape-menu {
+  position: absolute;
+  z-index: 150;
+  left: 50%;
+  bottom: calc(60px + var(--guionero-mobile-safe-bottom) + 72px);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  max-width: calc(100vw - 24px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgba(0,0,0,.2);
+  transform: translateX(-50%);
+}
+body.guionero-mobile-device .guionero-mobile-shape-menu[hidden] {
+  display: none !important;
+}
+body.guionero-mobile-device .guionero-mobile-shape-menu button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* iOS Safari can resize the visual viewport while keeping the layout viewport tall. */
+body.guionero-ios-device,
+body.guionero-ios-device .app {
+  min-height: 0;
+}
+body.guionero-ios-device .workspace,
+body.guionero-ios-device .note-inspector .inspector-content,
+body.guionero-ios-device #paintLayersPanel {
+  -webkit-overflow-scrolling: touch;
+}
+body.guionero-ios-device .sync-backdrop,
+body.guionero-ios-device .picker,
+body.guionero-ios-device .guionero-mobile-shape-menu {
+  -webkit-transform: translateZ(0);
+}
+@media (max-width: 650px) {
+  body.guionero-mobile-device .topbar {
+    padding-top: calc(7px + env(safe-area-inset-top, 0px));
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  body.guionero-mobile-device #guioneroMobileScriptToolbar {
+    margin-top: 0;
+    border-radius: 9px;
+  }
+  body.guionero-mobile-device #paper {
+    border-radius: 6px;
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  body.guionero-mobile-device .studio-tabs {
+    height: calc(52px + var(--guionero-mobile-safe-bottom));
+    padding-top: 4px;
+  }
+  body.guionero-mobile-device .studio-pane {
+    padding-bottom: calc(52px + var(--guionero-mobile-safe-bottom));
+  }
+  body.guionero-mobile-device .studio-tab {
+    min-height: 40px;
+  }
+}
+
+
+/* Contextual shape options remain reachable after the shape picker closes. */
+body.guionero-mobile-device .guionero-mobile-shape-options {
+  position: fixed;
+  z-index: 1002;
+  left: 50%;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 72px);
+  display: flex;
+  align-items: center;
+  min-width: 190px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgba(0,0,0,.2);
+  transform: translateX(-50%);
+}
+body.guionero-mobile-device .guionero-mobile-shape-options[hidden] {
+  display: none !important;
+}
+body.guionero-mobile-device .guionero-mobile-shape-options label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+body.guionero-mobile-device .guionero-mobile-shape-options input {
+  width: 100%;
+  min-height: 34px;
+  touch-action: pan-x;
+}
