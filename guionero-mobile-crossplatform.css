@@ -298,3 +298,223 @@ body.guionero-mobile-device .guionero-mobile-shape-options input {
   min-height: 34px;
   touch-action: pan-x;
 }
+
+
+/* Script mobile-only layout: pinned format rail, scrollable screenplay, compact top header. */
+body.guionero-mobile-device .app {
+  height:var(--guionero-mobile-visual-height,100dvh);
+  min-height:0;
+}
+body.guionero-mobile-device .main {
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+body.guionero-mobile-device .topbar {
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr) auto;
+  align-items:center;
+  gap:6px;
+  flex:0 0 auto;
+  min-width:0;
+  min-height:64px;
+  padding-left:8px;
+  padding-right:8px;
+}
+body.guionero-mobile-device .topbar > .mobile-menu {
+  grid-column:1;
+  grid-row:1;
+  display:inline-flex !important;
+  width:40px;
+  min-width:40px;
+  min-height:42px;
+  z-index:2;
+}
+body.guionero-mobile-device .topbar > .doc-heading {
+  grid-column:2;
+  grid-row:1;
+  min-width:0;
+  width:100%;
+}
+body.guionero-mobile-device .doc-eyebrow {
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:8px;
+}
+body.guionero-mobile-device .doc-title {
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  font-size:12px;
+}
+body.guionero-mobile-device .topbar > .top-actions {
+  grid-column:3;
+  grid-row:1;
+  min-width:0;
+  gap:3px;
+}
+body.guionero-mobile-device .top-actions button {
+  min-width:34px;
+  min-height:38px;
+  height:38px;
+  padding:0 5px;
+  font-size:10px;
+}
+body.guionero-mobile-device .top-actions #epubBtn {
+  padding:0 6px;
+  font-size:9px;
+}
+
+/* The hamburger drawer owns the existing project controls; it is not part of Script flow. */
+body.guionero-mobile-device #sidebar {
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+body.guionero-mobile-device #sidebar .sidebar-actions {
+  flex:0 0 auto;
+  padding:9px 12px 5px;
+}
+body.guionero-mobile-device #projectManagementDock.project-management-in-drawer {
+  display:flex;
+  flex:0 0 auto;
+  flex-direction:column;
+  gap:8px;
+  width:100%;
+  max-height:none;
+  overflow:visible;
+  margin:0;
+  padding:8px 12px 12px;
+  border-bottom:1px solid var(--line);
+  background:transparent;
+}
+body.guionero-mobile-device #projectManagementDock .project-toolbar-label {
+  display:block;
+  margin:0 0 2px;
+  font-size:10px;
+  letter-spacing:.1em;
+}
+body.guionero-mobile-device #projectManagementDock .script-project-toolbar {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:7px;
+  width:100%;
+  max-width:none;
+}
+body.guionero-mobile-device #projectManagementDock .script-project-toolbar > button,
+body.guionero-mobile-device #projectManagementDock .script-project-toolbar > select,
+body.guionero-mobile-device #projectManagementDock > #newScriptBtn,
+body.guionero-mobile-device #projectManagementDock .guionero-management-actions button {
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  min-height:44px;
+  box-sizing:border-box;
+  justify-content:flex-start;
+  white-space:normal;
+  text-align:left;
+  touch-action:manipulation;
+}
+body.guionero-mobile-device #projectManagementDock #savedScriptSelect {
+  height:auto;
+  min-height:44px;
+  padding:7px 9px;
+}
+body.guionero-mobile-device #projectManagementDock #projectLibraryStatus {
+  display:block;
+  max-width:none;
+  white-space:normal;
+  line-height:1.35;
+}
+body.guionero-mobile-device #projectManagementDock .guionero-management-actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  width:100%;
+  margin-top:3px;
+}
+body.guionero-mobile-device #projectManagementDock .guionero-management-actions button {
+  justify-content:center;
+  text-align:center;
+  padding:7px 8px;
+}
+body.guionero-mobile-device #projectManagementDock > .android-project-toggle {
+  display:none !important;
+}
+
+/* Toolbar is a fixed-height sibling of #workspace. Only the screenplay scrolls. */
+body.guionero-mobile-device #paneScript {
+  display:flex;
+  flex:1 1 0;
+  flex-direction:column;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+}
+body.guionero-mobile-device #paneScript > #guioneroMobileScriptToolbar {
+  position:sticky;
+  top:0;
+  z-index:50;
+  display:flex !important;
+  flex:0 0 auto;
+  align-items:stretch;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  min-height:58px;
+  margin:0;
+  padding:7px max(8px,env(safe-area-inset-left,0px)) 7px max(8px,env(safe-area-inset-right,0px));
+  border-top:0;
+  border-left:0;
+  border-right:0;
+  border-bottom:1px solid var(--line);
+  border-radius:0;
+  background:var(--panel);
+  overflow-x:auto;
+  overflow-y:hidden;
+  flex-wrap:nowrap;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  touch-action:pan-x;
+  visibility:visible;
+  opacity:1;
+}
+body.guionero-mobile-device #paneScript > #guioneroMobileScriptToolbar::-webkit-scrollbar {display:none}
+body.guionero-mobile-device #paneScript > #guioneroMobileScriptToolbar button {
+  display:flex;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:center;
+  min-width:68px;
+  min-height:44px;
+  padding:4px 9px;
+  white-space:nowrap;
+}
+body.guionero-mobile-device #paneScript > #workspace {
+  flex:1 1 0;
+  width:100%;
+  height:0;
+  min-width:0;
+  min-height:0;
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+body.guionero-mobile-device.android-keyboard-visible #paneScript > #guioneroMobileScriptToolbar {
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+body.guionero-mobile-device.android-keyboard-visible #paneScript > #workspace {
+  min-height:0;
+  padding-bottom:8px;
+}
