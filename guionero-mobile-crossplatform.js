@@ -24,7 +24,7 @@
     if (!$('guioneroMobileScriptToolbarStyle')) {
       const style = document.createElement('style');
       style.id = 'guioneroMobileScriptToolbarStyle';
-      style.textContent = '.guionero-mobile-script-toolbar{position:sticky;top:0;z-index:35;display:flex;align-items:stretch;gap:6px;max-width:100%;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;padding:7px 9px;border-bottom:1px solid var(--line);background:var(--panel);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none}.guionero-mobile-script-toolbar::-webkit-scrollbar{display:none}.guionero-mobile-script-tool{display:flex;flex:0 0 auto;min-width:68px;min-height:44px;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:700 10px/1.2 system-ui,sans-serif;touch-action:manipulation}.guionero-mobile-script-tool:active,.guionero-mobile-script-tool:focus-visible{border-color:var(--accent);background:var(--accent-soft);outline:none}.guionero-mobile-script-tool .mobile-tool-icon{font-size:15px;line-height:1}.guionero-mobile-script-tool .mobile-tool-label{white-space:nowrap}';
+      style.textContent = '.guionero-mobile-script-toolbar{position:relative;z-index:35;flex:0 0 auto;display:flex;align-items:stretch;gap:6px;width:100%;max-width:100%;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;padding:7px 9px;border-bottom:1px solid var(--line);background:var(--panel);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none}.guionero-mobile-script-toolbar::-webkit-scrollbar{display:none}.guionero-mobile-script-tool{display:flex;flex:0 0 auto;min-width:68px;min-height:44px;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:700 10px/1.2 system-ui,sans-serif;touch-action:manipulation}.guionero-mobile-script-tool:active,.guionero-mobile-script-tool:focus-visible{border-color:var(--accent);background:var(--accent-soft);outline:none}.guionero-mobile-script-tool .mobile-tool-icon{font-size:15px;line-height:1}.guionero-mobile-script-tool .mobile-tool-label{white-space:nowrap}';
       document.head.appendChild(style);
     }
     const bar = document.createElement('div');
@@ -65,7 +65,8 @@
       button.addEventListener('click', () => applyType(type));
       bar.appendChild(button);
     });
-    const reference = formatDetails || $('scriptFormatToolbar')?.parentElement || $('scriptProjectToolbar');
+    // La barra vive fuera del contenedor #workspace que desplaza el guion: permanece siempre a la vista.
+    const reference = $('workspace') || formatDetails || $('scriptFormatToolbar')?.parentElement || $('scriptProjectToolbar');
     if (reference?.parentNode) reference.parentNode.insertBefore(bar, reference);
     else scriptPane.insertBefore(bar, scriptPane.firstChild);
   }
