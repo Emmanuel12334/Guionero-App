@@ -119,6 +119,11 @@
   .picker-option .key { color:var(--accent); width:15px; font-size:12px; }
   .picker-back { border:0; background:transparent; color:var(--accent); font-size:11px; padding:5px 6px 9px; font-weight:800; }
   .picker-close { position:absolute; right:8px; top:7px; border:0; background:transparent; color:var(--muted); padding:4px; font-size:15px; }
+  .script-line-context-menu { position:fixed; z-index:10050; display:none; min-width:190px; max-width:min(220px,calc(100vw - 16px)); max-height:min(70vh,440px); overflow:auto; overscroll-behavior:contain; padding:7px; border:1px solid var(--line); border-radius:10px; background:var(--panel); color:var(--ink); box-shadow:0 14px 36px rgba(0,0,0,.24); }
+  .script-line-context-menu.visible { display:flex; flex-direction:column; gap:3px; }
+  .script-line-context-menu .menu-heading { padding:4px 8px 7px; color:var(--muted); font:800 9px/1.3 system-ui,sans-serif; letter-spacing:.1em; text-transform:uppercase; }
+  .script-line-context-menu [data-context-type] { display:flex; align-items:center; width:100%; min-height:34px; padding:7px 9px; border:0; border-radius:6px; background:transparent; color:inherit; font:700 12px/1.25 system-ui,sans-serif; text-align:left; cursor:pointer; }
+  .script-line-context-menu [data-context-type]:hover,.script-line-context-menu [data-context-type]:focus-visible { outline:none; background:var(--accent-soft); }
   .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0; pointer-events:none; background:var(--ink); color:var(--paper); padding:10px 15px; border-radius:9px; font-size:12px; box-shadow:var(--shadow); transition:all .18s ease; z-index:60; }
   .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
   .mobile-menu { display:none; }
@@ -595,7 +600,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
         <label title="Permitir que los colores de sombreado aparezcan al exportar"><input type="checkbox" id="scriptShadeExport"> Incluir sombreado al exportar</label>
         <span class="format-help" id="scriptFormatStatus">Selecciona texto para sombrear · Negrita también puede quedar activa al escribir</span>
       </div>
-      <div class="paper" id="paper"><div class="script" id="script" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Documento completo del guion" spellcheck="false"></div></div>
+      <div class="paper" id="paper"><div class="script" id="script" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Documento completo del guion" spellcheck="false" autocapitalize="sentences"></div></div>
       <div id="scriptReferences" style="max-width:880px;margin:14px auto 30px"></div>
     </section>
     </section>
@@ -698,6 +703,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
   const $ = id => document.getElementById(id);
   const script = $('script'), picker = $('picker'), workspace = $('workspace');
   let activeLine = null, isLoading = false, toastTimer = null, pendingEnter = null;
+  let scriptContextMenu = null, contextMenuTarget = null, contextMenuSelection = null;
   let historyPopup = null, historyActiveIndex = -1, historyItems = [];
   let applyingRemote = false, syncReady = false, syncSession = null, syncConfig = null;
   let cloudSaveTimer = null, cloudPollTimer = null, lastCloudTimestamp = 0, clientId = localClientId();
@@ -746,6 +752,36 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
     el.setAttribute('aria-label',meta.label.toLowerCase());
     return el;
   }
+  // Cambia únicamente el metadato de formato: el contenido HTML, el texto y la selección se conservan.
+  function applyScriptElementType(type,lineOverride=null,selectionOverride=null) {
+    const nextType=normalizeType(type);
+    const line=lineOverride&&script.contains(lineOverride)?lineOverride:selectionLine();
+    if(!line||!script.contains(line))return false;
+    const selection=window.getSelection();
+    let preservedRange=selectionOverride&&typeof selectionOverride.cloneRange==='function'?selectionOverride.cloneRange():null;
+    if(!preservedRange&&selection?.rangeCount){
+      const current=selection.getRangeAt(0);
+      if(line.contains(current.startContainer)&&line.contains(current.endContainer))preservedRange=current.cloneRange();
+    }
+    let caretOffset=lineText(line).length;
+    if(!preservedRange&&selection?.rangeCount&&line.contains(selection.anchorNode)){
+      caretOffset=textOffsetAt(line,selection.anchorNode,selection.anchorOffset);
+    }
+    setLineMeta(line,nextType);
+    closePicker();closeHistorySuggestions();closeScriptContextMenu();
+    afterEdit();
+    script.focus({preventScroll:true});
+    const liveSelection=window.getSelection();
+    if(preservedRange&&line.contains(preservedRange.startContainer)&&line.contains(preservedRange.endContainer)){
+      liveSelection.removeAllRanges();liveSelection.addRange(preservedRange);
+    }else{
+      setCaretOffset(line,Math.min(caretOffset,lineText(line).length));
+    }
+    markActiveLineWithoutMovingCaret(line);
+    return true;
+  }
+  // API compartida con la barra táctil; no abre el selector de creación de líneas.
+  window.GuioneroApplyScriptElementType=type=>applyScriptElementType(type);
   function createLine(type, text='', focus=false, before=null, html=null) {
     const el = document.createElement('p');
     setLineMeta(el,type); if(typeof html==='string'&&html.length)el.innerHTML=sanitizeInlineHtml(html);else el.textContent = text;
@@ -994,6 +1030,75 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
   script.addEventListener('paste',onEditorPaste);
   script.addEventListener('click',()=>{ activeLine=selectionLine(); if(activeLine) { blockElements().forEach(line=>{if(line===activeLine)line.dataset.active='true';else delete line.dataset.active;}); } });
   document.addEventListener('selectionchange',()=>{ const line=selectionLine(); if(line && script.contains(line)) activeLine=line; });
+  function closeScriptContextMenu(){
+    if(scriptContextMenu)scriptContextMenu.classList.remove('visible');
+    contextMenuTarget=null;contextMenuSelection=null;
+  }
+  function caretRangeAtPoint(x,y){
+    try{
+      if(document.caretRangeFromPoint)return document.caretRangeFromPoint(x,y);
+      if(document.caretPositionFromPoint){
+        const position=document.caretPositionFromPoint(x,y);
+        if(position){const range=document.createRange();range.setStart(position.offsetNode,position.offset);range.collapse(true);return range;}
+      }
+    }catch(_){}
+    return null;
+  }
+  function openScriptContextMenu(event){
+    // Android/iPhone usan exclusivamente los botones superiores, nunca este menú de escritorio.
+    if(window.__guioneroMobileTouchDevice===true)return;
+    const line=directBlockFromNode(event.target);
+    if(!line||!script.contains(line))return; // fuera de una línea se conserva el menú nativo del navegador.
+    event.preventDefault();
+    contextMenuTarget=line;
+    const selection=window.getSelection();
+    let range=null;
+    if(selection?.rangeCount){
+      const current=selection.getRangeAt(0);
+      if(line.contains(current.startContainer)&&line.contains(current.endContainer))range=current.cloneRange();
+    }
+    if(!range){
+      const hit=caretRangeAtPoint(event.clientX,event.clientY);
+      if(hit&&line.contains(hit.startContainer))range=hit;
+    }
+    if(!range){range=document.createRange();range.selectNodeContents(line);range.collapse(true);}
+    contextMenuSelection=range.cloneRange();
+    script.focus({preventScroll:true});
+    if(selection){selection.removeAllRanges();selection.addRange(contextMenuSelection);}
+    markActiveLineWithoutMovingCaret(line);
+    if(!scriptContextMenu){
+      scriptContextMenu=document.createElement('div');
+      scriptContextMenu.id='scriptLineContextMenu';
+      scriptContextMenu.className='script-line-context-menu';
+      scriptContextMenu.setAttribute('role','menu');
+      scriptContextMenu.setAttribute('aria-label','Cambiar formato de línea');
+      const options=[['SCENE','Escena'],['CHARACTER','Personaje'],['DIALOGUE','Diálogo'],['INTRO','Intro'],['ACTION','Acción'],['PARENTHETICAL','Parentética'],['TRANSITION','Transición']];
+      scriptContextMenu.innerHTML='<div class="menu-heading">Formato de línea</div>'+options.map(([type,label])=>'<button type="button" role="menuitem" data-context-type="'+type+'">'+label+'</button>').join('');
+      scriptContextMenu.addEventListener('pointerdown',e=>{if(e.target.closest?.('[data-context-type]'))e.preventDefault();});
+      scriptContextMenu.addEventListener('click',e=>{
+        const button=e.target.closest?.('[data-context-type]');
+        if(!button)return;
+        const target=contextMenuTarget;
+        const selectedRange=contextMenuSelection?.cloneRange?.()||null;
+        const type=button.dataset.contextType;
+        closeScriptContextMenu();
+        applyScriptElementType(type,target,selectedRange);
+      });
+      document.body.appendChild(scriptContextMenu);
+    }
+    scriptContextMenu.style.left='8px';scriptContextMenu.style.top='8px';
+    scriptContextMenu.classList.add('visible');
+    const menuRect=scriptContextMenu.getBoundingClientRect();
+    const margin=8;
+    const left=Math.max(margin,Math.min(event.clientX+5,window.innerWidth-menuRect.width-margin));
+    const top=Math.max(margin,Math.min(event.clientY+5,window.innerHeight-menuRect.height-margin));
+    scriptContextMenu.style.left=left+'px';scriptContextMenu.style.top=top+'px';
+  }
+  script.addEventListener('contextmenu',openScriptContextMenu);
+  document.addEventListener('pointerdown',event=>{if(scriptContextMenu?.classList.contains('visible')&&!scriptContextMenu.contains(event.target))closeScriptContextMenu();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&scriptContextMenu?.classList.contains('visible')){event.preventDefault();closeScriptContextMenu();}});
+  window.addEventListener('resize',closeScriptContextMenu,{passive:true});
+  workspace.addEventListener('scroll',closeScriptContextMenu,true);
   function showTypePicker(line,preserveEditorFocus=false) {
     activeLine=line || selectionLine() || blockElements().at(-1); if (!activeLine) activeLine=createLine('SCENE','',false); 
     renderTypePicker(!preserveEditorFocus);
