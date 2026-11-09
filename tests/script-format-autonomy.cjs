@@ -107,6 +107,10 @@ async function desktopContextMenu(browser) {
     await scene.click({ button:'right', position:{x:40,y:10} });
     const menu = page.locator('#scriptLineContextMenu');
     await menu.waitFor({ state:'visible', timeout:3000 });
+    await page.locator('#mainTitle').click();
+    assert.equal(await menu.isVisible(), false, 'Un clic fuera debe cerrar el menú contextual');
+    await scene.click({ button:'right', position:{x:40,y:10} });
+    await menu.waitFor({ state:'visible', timeout:3000 });
     const bounds = await menu.boundingBox();
     const viewport = page.viewportSize();
     assert.ok(bounds && bounds.x >= 0 && bounds.y >= 0 &&
@@ -232,12 +236,22 @@ async function mobileToolbar(browser, options, label) {
       label + ': el menú contextual de escritorio no debe aparecer en móvil');
     await assertEditorCaret(page, 'INTRO', label + ': último botón de formato');
 
-    const topBefore = await toolbar.evaluate(el => el.getBoundingClientRect().top);
-    await page.locator('#workspace').evaluate(el => { el.scrollTop = 280; });
-    await page.waitForTimeout(80);
-    const topAfter = await toolbar.evaluate(el => el.getBoundingClientRect().top);
-    assert.ok(Math.abs(topAfter - topBefore) <= 1,
-      label + ': la barra de formatos debe seguir accesible al desplazarse por el guion');
+    const workspace = page.locator('#workspace');
+    const beforeScroll = await workspace.evaluate(el => ({ top:el.getBoundingClientRect().top, scroll:el.scrollTop, max:el.scrollHeight-el.clientHeight }));
+    await workspace.evaluate(el => { el.scrollTop = Math.min(280, el.scrollHeight-el.clientHeight); });
+    await page.waitForTimeout(100);
+    const afterScroll = await page.evaluate(() => {
+      const bar=document.getElementById('guioneroMobileScriptToolbar');
+      const area=document.getElementById('workspace');
+      return { top:bar.getBoundingClientRect().top, bottom:bar.getBoundingClientRect().bottom,
+        areaTop:area.getBoundingClientRect().top, areaBottom:area.getBoundingClientRect().bottom,
+        scroll:area.scrollTop, visible:bar.getBoundingClientRect().height>0 };
+    });
+    assert.ok(beforeScroll.max>0 && afterScroll.scroll>0,
+      label + ': el documento debe poder desplazarse para comprobar la barra');
+    assert.equal(afterScroll.visible,true,label + ': la barra debe permanecer visible');
+    assert.ok(afterScroll.top >= afterScroll.areaTop-2 && afterScroll.bottom <= afterScroll.areaBottom+2,
+      label + ': la barra de formatos debe permanecer anclada dentro del área visible del editor');
 
     const saved = await page.evaluate(() => window.GuioneroStudio.exportState());
     const storedBlocks = saved.pages?.[0]?.blocks || [];
