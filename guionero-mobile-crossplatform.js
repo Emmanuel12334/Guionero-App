@@ -7,6 +7,23 @@
   const body = document.body;
   body.classList.add('guionero-mobile-device');
 
+  // En móviles, coloca el botón ☰ como primer elemento del encabezado.
+  // En escritorio no se mueve ningún nodo ni cambia la distribución original.
+  const mobileMenuButton = $('mobileMenuBtn');
+  const topbar = document.querySelector('.topbar');
+  const docHeading = topbar?.querySelector('.doc-heading');
+  const topActions = topbar?.querySelector('.top-actions');
+  const placeMobileMenu = () => {
+    if (!mobileMenuButton || !topbar || !docHeading || !topActions) return;
+    if (window.matchMedia('(max-width: 650px)').matches) {
+      if (mobileMenuButton.parentElement !== topbar) topbar.insertBefore(mobileMenuButton, docHeading);
+    } else if (mobileMenuButton.parentElement !== topActions) {
+      topActions.insertBefore(mobileMenuButton, topActions.firstChild);
+    }
+  };
+  placeMobileMenu();
+  window.addEventListener('resize', placeMobileMenu, { passive: true });
+
   function mobileToast(message) {
     const toast = $('toast');
     if (!toast) return;
@@ -69,6 +86,30 @@
     const reference = $('workspace') || formatDetails || $('scriptFormatToolbar')?.parentElement || $('scriptProjectToolbar');
     if (reference?.parentNode) reference.parentNode.insertBefore(bar, reference);
     else scriptPane.insertBefore(bar, scriptPane.firstChild);
+  }
+
+  // Los controles administrativos permanecen dentro del menú lateral y se cierran
+  // después de ejecutar una acción que vuelve al editor o abre un diálogo/selector.
+  const projectDock = $('projectManagementDock');
+  const sidebar = $('sidebar');
+  const menuButton = $('mobileMenuBtn');
+  const closeProjectDrawer = () => {
+    sidebar?.classList.remove('open');
+    menuButton?.setAttribute('aria-expanded', 'false');
+  };
+  if (projectDock && !projectDock.dataset.mobileDrawerActions) {
+    projectDock.dataset.mobileDrawerActions = 'true';
+    projectDock.addEventListener('click', event => {
+      const control = event.target.closest?.('button');
+      if (!control || ![
+        'newScriptBtn', 'savedScriptsBrowseBtn', 'projectImportBtn',
+        'projectSaveBtn', 'projectSaveAsBtn', 'guioneroStructureBtn', 'guioneroSettingsBtn'
+      ].includes(control.id)) return;
+      requestAnimationFrame(closeProjectDrawer);
+    });
+    projectDock.addEventListener('change', event => {
+      if (event.target?.id === 'savedScriptSelect') closeProjectDrawer();
+    });
   }
 
   /* Paint: surface common actions without replacing the original controls. */
