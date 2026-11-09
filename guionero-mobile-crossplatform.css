@@ -377,6 +377,11 @@ body.guionero-mobile-device #sidebar {
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
 }
+body.guionero-mobile-device #sidebar {
+  z-index:1001;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
 body.guionero-mobile-device #sidebar .sidebar-actions {
   flex:0 0 auto;
   padding:9px 12px 5px;
