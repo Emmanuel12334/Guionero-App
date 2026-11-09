@@ -150,6 +150,10 @@ async function runScriptFlow(browser, options, label, withUndoRedo) {
       await page.keyboard.type('Una luz se enciende.');
     }
 
+    // Start a fresh empty action block before explicitly choosing a parenthetical.
+    await page.keyboard.press('Enter');
+    await assertCaret(page, 'ACTION', label + ': tercera acción lista para cambiar de tipo');
+
     // Parenthetical remains independent and keeps its current formatting/continuation behavior.
     await selectTypeWithPicker(page, 'PARENTHETICAL');
     const parenthetical = page.locator('#script .script-line[data-type="PARENTHETICAL"]').last();
