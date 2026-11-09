@@ -382,7 +382,7 @@ body.guionero-mobile-device #sidebar .sidebar-actions {
   padding:9px 12px 5px;
 }
 body.guionero-mobile-device #projectManagementDock.project-management-in-drawer {
-  display:flex;
+  display:flex !important;
   flex:0 0 auto;
   flex-direction:column;
   gap:8px;
