@@ -106,7 +106,7 @@
         'projectSaveBtn', 'projectSaveAsBtn', 'guioneroStructureBtn', 'guioneroSettingsBtn'
       ].includes(control.id)) return;
       requestAnimationFrame(closeProjectDrawer);
-    });
+    }, true);
     projectDock.addEventListener('change', event => {
       if (event.target?.id === 'savedScriptSelect') closeProjectDrawer();
     });
