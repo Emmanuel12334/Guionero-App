@@ -2601,8 +2601,11 @@ window.setInterval(async()=>{if(!dirty||switchingProject||Date.now()-lastSuccess
  const mountProjectDock=()=>{
    const mobile=window.__guioneroMobileTouchDevice===true&&!!window.matchMedia?.('(max-width: 650px)').matches;
    if(mobile&&sidebar){
-     if(sidebarActions)sidebarActions.appendChild(dock);
-     else sidebar.insertBefore(dock,card||sidebar.firstChild);
+     // .sidebar-actions está oculto por el CSS base; el dock se monta directamente en el cajón.
+     const drawerAnchor=card||sidebar.querySelector('.nav-search')||null;
+     if(sidebarActions?.parentNode===sidebar)sidebarActions.remove();
+     if(drawerAnchor)sidebar.insertBefore(dock,drawerAnchor);
+     else sidebar.appendChild(dock);
      dock.classList.add('project-management-in-drawer');
      dock.classList.remove('project-management-mobile');
    }else if(card){
