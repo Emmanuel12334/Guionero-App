@@ -142,8 +142,8 @@ async function mobileLayoutAndAdmin(browser, options, label) {
       label + ': Guardar como debe generar un archivo de proyecto');
     const exportedBuffer = fs.readFileSync(exportedPath);
     const exportedObject = JSON.parse(exportedBuffer.toString('utf8'));
-    assert.ok(Array.isArray(exportedObject.pages) && Array.isArray(exportedObject.connections),
-      label + ': el archivo exportado debe preservar la estructura del proyecto');
+    assert.ok(Array.isArray(exportedObject.studio?.pages) && Array.isArray(exportedObject.studio?.connections),
+      label + ': el archivo exportado debe preservar la estructura del proyecto dentro de studio');
     await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('open'));
 
     // Importar proyecto usa el selector real del dispositivo y el diálogo de confirmación existente.
