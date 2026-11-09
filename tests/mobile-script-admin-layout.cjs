@@ -93,8 +93,26 @@ async function mobileLayoutAndAdmin(browser, options, label) {
     const sidebar = page.locator('#sidebar');
     await menu.click();
     await page.waitForFunction(() => document.getElementById('sidebar')?.classList.contains('open'));
+    const drawerVisibility = await page.evaluate(() => {
+      const dock=document.getElementById('projectManagementDock');
+      const sidebar=document.getElementById('sidebar');
+      const actions=sidebar?.querySelector('.sidebar-actions');
+      const describe=el=>{if(!el)return null;const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return {
+        id:el.id,className:el.className,display:cs.display,visibility:cs.visibility,position:cs.position,
+        width:r.width,height:r.height,top:r.top,left:r.left,opacity:cs.opacity,overflow:cs.overflow,
+        hidden:el.hidden
+      };};
+      return {
+        bodyClasses:document.body.className,
+        sidebar:describe(sidebar),
+        sidebarActions:describe(actions),
+        dock:describe(dock),
+        dockChildren:Array.from(dock?.children||[]).map(describe),
+        mobileClass:dock?.classList.contains('project-management-in-drawer')
+      };
+    });
     assert.equal(await page.locator('#projectManagementDock').isVisible(), true,
-      label + ': el panel de gestión debe verse al abrir ☰');
+      label + ': el panel de gestión debe verse al abrir ☰. Estado: '+JSON.stringify(drawerVisibility));
     assert.equal(await menu.getAttribute('aria-expanded'), 'true', label + ': ☰ debe reflejar el estado abierto');
     await page.locator('#mainTitle').click();
     await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('open'));
