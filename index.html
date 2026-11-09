@@ -793,6 +793,91 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
     try { const range=document.createRange(); range.selectNodeContents(el); range.setEnd(node,offset); return range.toString().length; }
     catch(e) { return (el.textContent||'').length; }
   }
+  let shiftEnterPending=false;
+  function nextTypeAfterEnter(type){
+    const transitions={SCENE:'ACTION',ACTION:'ACTION',CHARACTER:'DIALOGUE',DIALOGUE:'ACTION',PARENTHETICAL:'DIALOGUE',TRANSITION:'SCENE',INTRO:'ACTION'};
+    return transitions[normalizeType(type)]||'ACTION';
+  }
+  function markActiveLineWithoutMovingCaret(line){
+    if(!line||!script.contains(line))return;
+    activeLine=line;
+    blockElements().forEach(item=>{if(item===line)item.dataset.active='true';else delete item.dataset.active;});
+  }
+  function placeCaretAtLineStart(line){
+    if(!line||!script.contains(line))return;
+    const sel=window.getSelection();
+    const currentLine=sel?.rangeCount?directBlockFromNode(sel.anchorNode):null;
+    if(document.activeElement===script&&sel?.isCollapsed&&currentLine===line){
+      markActiveLineWithoutMovingCaret(line);return;
+    }
+    if(document.activeElement!==script)script.focus({preventScroll:true});
+    setCaretOffset(line,0);
+    markActiveLineWithoutMovingCaret(line);
+  }
+  function createPendingEnter(line){
+    if(!line||!script.contains(line))return null;
+    pendingEnter={line,type:normalizeType(line.dataset.type),before:new Set(blockElements())};
+    return pendingEnter;
+  }
+  function continueAfterParenthetical(line){
+    if(!line||!script.contains(line))return false;
+    line.textContent=completeParentheticalText(lineText(line));
+    const next=createLine('DIALOGUE','',false,line.nextElementSibling);
+    closePicker();closeHistorySuggestions();
+    placeCaretAtLineStart(next);
+    afterEdit();
+    return true;
+  }
+  function splitLineAtCurrentCaret(line,nextType){
+    if(!line||!script.contains(line))return null;
+    const sel=window.getSelection();
+    let range=sel?.rangeCount?sel.getRangeAt(0).cloneRange():null;
+    if(!range||!line.contains(range.startContainer)||!line.contains(range.endContainer)){
+      range=document.createRange();range.selectNodeContents(line);range.collapse(false);
+    }else if(!range.collapsed){
+      range.deleteContents();
+      range.collapse(true);
+    }
+    const tail=range.cloneRange();
+    tail.selectNodeContents(line);
+    try{tail.setStart(range.startContainer,range.startOffset);}catch(_){tail.selectNodeContents(line);tail.collapse(false);}
+    const fragment=tail.extractContents();
+    const next=document.createElement('p');
+    setLineMeta(next,nextType);
+    if(fragment.childNodes.length)next.appendChild(fragment);
+    script.insertBefore(next,line.nextSibling);
+    closePicker();closeHistorySuggestions();
+    placeCaretAtLineStart(next);
+    afterEdit();
+    return next;
+  }
+  function onEditorBeforeInput(event){
+    if(window.__guioneroStudioRenderingScript||event.isComposing||shiftEnterPending)return;
+    const inputType=event.inputType;
+    if(inputType!=='insertParagraph'&&inputType!=='insertLineBreak')return;
+    if(inputType==='insertParagraph'&&pendingEnter)return;
+    const line=selectionLine();
+    if(!line)return;
+    const type=normalizeType(line.dataset.type);
+    if(inputType==='insertLineBreak'){
+      event.preventDefault();
+      if(pendingEnter){
+        const pending=pendingEnter;pendingEnter=null;
+        if(pending.type==='PARENTHETICAL')continueAfterParenthetical(pending.line);
+        else splitLineAtCurrentCaret(pending.line,nextTypeAfterEnter(pending.type));
+      }else if(type==='PARENTHETICAL')continueAfterParenthetical(line);
+      else splitLineAtCurrentCaret(line,nextTypeAfterEnter(type));
+      return;
+    }
+    if(type==='PARENTHETICAL'){
+      event.preventDefault();continueAfterParenthetical(line);return;
+    }
+    const sel=window.getSelection();
+    if(!lineText(line).trim()&&sel?.isCollapsed){
+      event.preventDefault();showTypePicker(line,true);return;
+    }
+    createPendingEnter(line);
+  }
   function onEditorKeydown(event) {
     const el=selectionLine();
     if(event.key===')'&&el?.dataset.type==='PARENTHETICAL'){
@@ -805,53 +890,53 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
       if(event.key==='Tab')closeHistorySuggestions();else if(!event.ctrlKey&&!event.metaKey&&!event.altKey&&(event.key.length===1||event.key==='Backspace'||event.key==='Delete'))closeHistorySuggestions();
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase()==='s') { event.preventDefault(); if(window.GuioneroSaveProject)window.GuioneroSaveProject();else saveState(); return; }
-    if (event.key==='Escape' && picker.classList.contains('visible')) { event.preventDefault(); closePicker(); if(el) focusLine(el,true); return; }
-    if (event.key==='Tab') { event.preventDefault(); showTypePicker(el); return; }
-    if(event.key!=='Enter' || event.shiftKey) return;
+    if(event.key==='Escape'&&picker.classList.contains('visible')){event.preventDefault();closePicker();if(el)focusLine(el,true);return;}
+    if(event.key==='Tab'){event.preventDefault();showTypePicker(el);return;}
+    if(event.key==='Enter'&&event.shiftKey){shiftEnterPending=true;return;}
+    if(event.key!=='Enter'||event.ctrlKey||event.metaKey||event.altKey)return;
+    if(event.isComposing||event.keyCode===229)return;
     if(el&&normalizeType(el.dataset.type)==='PARENTHETICAL'){
-      event.preventDefault();event.stopPropagation();
-      el.textContent=completeParentheticalText(lineText(el));
-      const next=createLine('DIALOGUE','',false,el.nextElementSibling);
-      focusLine(next,false);afterEdit();return;
+      event.preventDefault();event.stopPropagation();continueAfterParenthetical(el);return;
     }
     const sel=window.getSelection();
-    if(el && !el.textContent.trim() && sel?.isCollapsed) {
-      event.preventDefault(); showTypePicker(el); return;
+    if(el&&!lineText(el).trim()&&sel?.isCollapsed){
+      event.preventDefault();showTypePicker(el,true);return;
     }
-    // Pedimos al motor de edición del navegador que parta el párrafo. Esto
-    // conserva el comportamiento nativo de selección y el historial Ctrl+Z.
-    if(el) {
-      pendingEnter={line:el,type:normalizeType(el.dataset.type),before:new Set(blockElements())};
-      event.preventDefault();
-      const inserted=document.execCommand('insertParagraph');
-      if(!inserted) {
-        // Respaldo para motores que no admiten insertParagraph.
-        const current=window.getSelection();
-        const range=current?.rangeCount?current.getRangeAt(0):null;
-        const offset=range?textOffsetAt(el,range.startContainer,range.startOffset):(el.textContent||'').length;
-        const raw=el.textContent||''; const newLine=createLine('ACTION',raw.slice(offset),false,el.nextElementSibling);
-        el.textContent=raw.slice(0,offset); pendingEnter=null; showTypePicker(newLine); afterEdit();
-      } else if(pendingEnter) {
-        // Normalmente el evento input ya procesa esto sincrónicamente.
-        commitPendingEnter(); activeLine=selectionLine(); afterEdit();
-      }
+    if(!el)return;
+    createPendingEnter(el);
+    event.preventDefault();
+    let inserted=false;
+    try{inserted=document.execCommand('insertParagraph',false,null);}catch(_){}
+    if(!inserted&&pendingEnter){
+      const pending=pendingEnter;pendingEnter=null;
+      splitLineAtCurrentCaret(pending.line,nextTypeAfterEnter(pending.type));
+      return;
+    }
+    if(pendingEnter){
+      const pending=pendingEnter;
+      const added=[...script.children].filter(item=>!pending.before.has(item));
+      if(added.length&&commitPendingEnter())afterEdit();
     }
   }
-  function commitPendingEnter() {
-    if(!pendingEnter) return false;
-    const pending=pendingEnter; pendingEnter=null;
+  function commitPendingEnter(){
+    if(!pendingEnter)return false;
+    const pending=pendingEnter;pendingEnter=null;
+    const children=[...script.children];
+    const added=children.filter(item=>!pending.before.has(item)&&item!==pending.line);
     let target=selectionLine();
-    if(!target || target===pending.line) {
-      const added=Array.from(script.children).filter(line=>!pending.before.has(line));
-      target=added.at(-1) || target;
+    if(!target||target===pending.line||pending.before.has(target)){
+      const oldIndex=children.indexOf(pending.line);
+      target=children.slice(Math.max(0,oldIndex+1)).find(item=>added.includes(item))||added[0]||null;
     }
-    if(target) {
-      setLineMeta(target,'ACTION');
-      // Chromium puede dejar un salto de relleno como texto en el párrafo vacío.
-      if(!target.textContent.trim()) target.textContent='';
-      showTypePicker(target);
+    if(!target){
+      const fallback=splitLineAtCurrentCaret(pending.line,nextTypeAfterEnter(pending.type));
+      return !!fallback;
     }
-    return !!target;
+    setLineMeta(target,nextTypeAfterEnter(pending.type));
+    markActiveLineWithoutMovingCaret(target);
+    closePicker();closeHistorySuggestions();
+    placeCaretAtLineStart(target);
+    return true;
   }
   function onEditorInput(event) {
     if(window.__guioneroStudioRenderingScript) return;
@@ -903,21 +988,24 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
   }
   function endOffsetFallback(el) { return (el.textContent||'').length; }
   script.addEventListener('keydown',onEditorKeydown);
+  script.addEventListener('beforeinput',onEditorBeforeInput);
+  script.addEventListener('keyup',event=>{if(event.key==='Enter')shiftEnterPending=false;});
   script.addEventListener('input',onEditorInput);
   script.addEventListener('paste',onEditorPaste);
   script.addEventListener('click',()=>{ activeLine=selectionLine(); if(activeLine) { blockElements().forEach(line=>{if(line===activeLine)line.dataset.active='true';else delete line.dataset.active;}); } });
   document.addEventListener('selectionchange',()=>{ const line=selectionLine(); if(line && script.contains(line)) activeLine=line; });
-  function showTypePicker(line) {
+  function showTypePicker(line,preserveEditorFocus=false) {
     activeLine=line || selectionLine() || blockElements().at(-1); if (!activeLine) activeLine=createLine('SCENE','',false); 
-    renderTypePicker();
+    renderTypePicker(!preserveEditorFocus);
     const rect=activeLine.getBoundingClientRect();
     const width=Math.min(310, window.innerWidth-20);
     const left=Math.max(10,Math.min(rect.left,window.innerWidth-width-10));
     const top=Math.max(10,Math.min(rect.bottom+7,window.innerHeight-270));
     picker.style.left=left+'px'; picker.style.top=top+'px'; picker.classList.add('visible');
-    const first=picker.querySelector('[data-pick]'); if(first) first.focus({preventScroll:true});
+    if(preserveEditorFocus){if(document.activeElement!==script)script.focus({preventScroll:true});}
+    else{const first=picker.querySelector('[data-pick]');if(first)first.focus({preventScroll:true});}
   }
-  function renderTypePicker() {
+  function renderTypePicker(focusFirst=true) {
     picker.innerHTML='<button class="picker-close" aria-label="Cerrar">×</button><div class="picker-title">¿Qué vas a escribir?</div><div class="picker-grid">'+TYPES.map(t=>`<button class="picker-option" data-pick="${t.type}"><span class="key">${t.icon}</span><span>${t.label}</span></button>`).join('')+'</div>';
     picker.querySelector('.picker-close').addEventListener('click',closePicker);
     picker.querySelectorAll('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>{
@@ -925,7 +1013,7 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
       if(type==='TRANSITION') { renderTransitionPicker(); return; }
       applyPickedType(type,'');
     }));
-    const first=picker.querySelector('[data-pick]'); if(first) first.focus({preventScroll:true});
+    if(focusFirst){const first=picker.querySelector('[data-pick]');if(first)first.focus({preventScroll:true});}
   }
   function renderTransitionPicker() {
     picker.innerHTML='<button class="picker-close" aria-label="Cerrar">×</button><button class="picker-back">← Volver a los tipos</button><div class="picker-title">Elige una transición</div><div class="picker-grid"><button class="picker-option" data-transition="CUT TO:"><span class="key">↘</span><span>CUT TO:</span></button><button class="picker-option" data-transition="CUT TO BLACK."><span class="key">■</span><span>CUT TO BLACK</span></button></div>';
