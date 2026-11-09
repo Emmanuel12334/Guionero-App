@@ -236,22 +236,17 @@ async function mobileToolbar(browser, options, label) {
       label + ': el menú contextual de escritorio no debe aparecer en móvil');
     await assertEditorCaret(page, 'INTRO', label + ': último botón de formato');
 
+    const toolbarBefore = await toolbar.evaluate(el => el.getBoundingClientRect().top);
     const workspace = page.locator('#workspace');
-    const beforeScroll = await workspace.evaluate(el => ({ top:el.getBoundingClientRect().top, scroll:el.scrollTop, max:el.scrollHeight-el.clientHeight }));
+    const beforeScroll = await workspace.evaluate(el => ({ scroll:el.scrollTop, max:el.scrollHeight-el.clientHeight }));
     await workspace.evaluate(el => { el.scrollTop = Math.min(280, el.scrollHeight-el.clientHeight); });
-    await page.waitForTimeout(100);
-    const afterScroll = await page.evaluate(() => {
-      const bar=document.getElementById('guioneroMobileScriptToolbar');
-      const area=document.getElementById('workspace');
-      return { top:bar.getBoundingClientRect().top, bottom:bar.getBoundingClientRect().bottom,
-        areaTop:area.getBoundingClientRect().top, areaBottom:area.getBoundingClientRect().bottom,
-        scroll:area.scrollTop, visible:bar.getBoundingClientRect().height>0 };
-    });
-    assert.ok(beforeScroll.max>0 && afterScroll.scroll>0,
+    await page.waitForTimeout(120);
+    const toolbarAfter = await toolbar.evaluate(el => ({ top:el.getBoundingClientRect().top, height:el.getBoundingClientRect().height }));
+    const afterScroll = await workspace.evaluate(el => el.scrollTop);
+    assert.ok(beforeScroll.max>0 && afterScroll>0,
       label + ': el documento debe poder desplazarse para comprobar la barra');
-    assert.equal(afterScroll.visible,true,label + ': la barra debe permanecer visible');
-    assert.ok(afterScroll.top >= afterScroll.areaTop-2 && afterScroll.bottom <= afterScroll.areaBottom+2,
-      label + ': la barra de formatos debe permanecer anclada dentro del área visible del editor');
+    assert.ok(toolbarAfter.height>0 && Math.abs(toolbarAfter.top-toolbarBefore)<=1,
+      label + ': la barra superior debe permanecer fija mientras se desplaza el documento');
 
     const saved = await page.evaluate(() => window.GuioneroStudio.exportState());
     const storedBlocks = saved.pages?.[0]?.blocks || [];
