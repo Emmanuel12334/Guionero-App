@@ -3534,7 +3534,7 @@ body.android-device #paintToolbar {scrollbar-width:thin}
  const syncMenuButton=()=>{menu?.setAttribute('aria-controls','sidebar');menu?.setAttribute('aria-expanded',String(!!sidebar?.classList.contains('open')));};
  const closeSidebar=()=>{sidebar?.classList.remove('open');syncMenuButton();};
  syncMenuButton();
- menu?.addEventListener('click',()=>requestAnimationFrame(syncMenuButton));
+ menu?.addEventListener('click',syncMenuButton);
  document.addEventListener('pointerdown',e=>{
   if(sidebar?.classList.contains('open')&&!sidebar.contains(e.target)&&!menu?.contains(e.target))closeSidebar();
  });
