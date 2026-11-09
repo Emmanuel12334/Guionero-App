@@ -861,7 +861,11 @@ body[data-theme="dark"] .primary-button{background:var(--guionero-primary-button
     const type=normalizeType(line.dataset.type);
     if(inputType==='insertLineBreak'){
       event.preventDefault();
-      if(type==='PARENTHETICAL')continueAfterParenthetical(line);
+      if(pendingEnter){
+        const pending=pendingEnter;pendingEnter=null;
+        if(pending.type==='PARENTHETICAL')continueAfterParenthetical(pending.line);
+        else splitLineAtCurrentCaret(pending.line,nextTypeAfterEnter(pending.type));
+      }else if(type==='PARENTHETICAL')continueAfterParenthetical(line);
       else splitLineAtCurrentCaret(line,nextTypeAfterEnter(type));
       return;
     }
