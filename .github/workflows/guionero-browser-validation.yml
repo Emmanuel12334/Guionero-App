@@ -22,11 +22,35 @@ jobs:
         run: npm install --no-save --no-package-lock playwright@1.64.1
       - name: Install Chromium
         run: npx playwright install --with-deps chromium webkit
-      - name: Check new mobile JavaScript files
+      - name: Check new mobile and Script test JavaScript
         run: |
           node --check guionero-mobile-crossplatform.js
           node --check tests/ios-mobile-smoke.cjs
+          node --check tests/script-enter-flow.cjs
+      - name: Run Script Enter desktop, Android and iPhone tests
+        run: node tests/script-enter-flow.cjs
       - name: Run desktop and Android browser tests
         run: node tests/guionero-browser-smoke.cjs
       - name: Run iPhone WebKit mobile tests
         run: node tests/ios-mobile-smoke.cjs
+
+  windows-script-enter:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check HTML and Script test JavaScript
+        run: |
+          node scripts/check-html.js
+          node --check tests/script-enter-flow.cjs
+      - name: Install Playwright
+        run: npm install --no-save --no-package-lock playwright@1.64.1
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Run Windows desktop Script Enter test
+        run: node tests/script-enter-flow.cjs --desktop-only
