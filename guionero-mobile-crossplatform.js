@@ -16,40 +16,36 @@
     mobileToast.timer = setTimeout(() => toast.classList.remove('show'), 2400);
   }
 
-  /* Script: preserve the existing continuous editor and open its real type picker. */
+  /* Script: los botones móviles convierten la línea activa sin abrir el selector de creación. */
   const scriptPane = $('paneScript');
   const script = $('script');
-  const picker = $('picker');
   const formatDetails = $('androidScriptFormatDetails');
-  if (scriptPane && script && picker && !$('guioneroMobileScriptToolbar')) {
+  if (scriptPane && script && !$('guioneroMobileScriptToolbar')) {
+    if (!$('guioneroMobileScriptToolbarStyle')) {
+      const style = document.createElement('style');
+      style.id = 'guioneroMobileScriptToolbarStyle';
+      style.textContent = '.guionero-mobile-script-toolbar{position:relative;z-index:35;flex:0 0 auto;display:flex;align-items:stretch;gap:6px;width:100%;max-width:100%;box-sizing:border-box;overflow-x:auto;overflow-y:hidden;padding:7px 9px;border-bottom:1px solid var(--line);background:var(--panel);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none}.guionero-mobile-script-toolbar::-webkit-scrollbar{display:none}.guionero-mobile-script-tool{display:flex;flex:0 0 auto;min-width:68px;min-height:44px;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:700 10px/1.2 system-ui,sans-serif;touch-action:manipulation}.guionero-mobile-script-tool:active,.guionero-mobile-script-tool:focus-visible{border-color:var(--accent);background:var(--accent-soft);outline:none}.guionero-mobile-script-tool .mobile-tool-icon{font-size:15px;line-height:1}.guionero-mobile-script-tool .mobile-tool-label{white-space:nowrap}';
+      document.head.appendChild(style);
+    }
     const bar = document.createElement('div');
     bar.id = 'guioneroMobileScriptToolbar';
     bar.className = 'guionero-mobile-script-toolbar';
     bar.setAttribute('role', 'toolbar');
     bar.setAttribute('aria-label', 'Herramientas de formato del guion');
     const entries = [
-      ['SCENE', '▣', 'Scene'],
-      ['ACTION', '✎', 'Action'],
-      ['CHARACTER', '♙', 'Character'],
-      ['PARENTHETICAL', '(', 'Parenthetical'],
-      ['DIALOGUE', '☷', 'Dialogue'],
-      ['TRANSITION', '⇢', 'Transition'],
-      ['INTRO', '☆', 'Intro']
+      ['SCENE', '▣', 'Escena'],
+      ['CHARACTER', '♙', 'Personaje'],
+      ['DIALOGUE', '☷', 'Diálogo'],
+      ['INTRO', '☆', 'Intro'],
+      ['ACTION', '✎', 'Acción'],
+      ['PARENTHETICAL', '(', 'Parentética'],
+      ['TRANSITION', '⇢', 'Transición']
     ];
-    function openType(type) {
-      script.focus({ preventScroll: true });
-      const pickerAlreadyOpen = picker.classList.contains('visible');
-      if (!pickerAlreadyOpen) {
-        script.dispatchEvent(new KeyboardEvent('keydown', {
-          key: 'Tab', code: 'Tab', bubbles: true, cancelable: true
-        }));
+    function applyType(type) {
+      const apply = window.GuioneroApplyScriptElementType;
+      if (typeof apply !== 'function' || apply(type) !== true) {
+        mobileToast('Coloca el cursor en la línea que quieres cambiar.');
       }
-      const choose = () => {
-        const option = picker.querySelector('[data-pick="' + type + '"]');
-        if (option) option.click();
-        else if (picker.classList.contains('visible')) mobileToast('No se pudo abrir esa herramienta del guion.');
-      };
-      requestAnimationFrame(() => requestAnimationFrame(choose));
     }
     entries.forEach(([type, glyph, label]) => {
       const button = document.createElement('button');
@@ -66,10 +62,11 @@
       caption.className = 'mobile-tool-label';
       caption.textContent = label;
       button.append(icon, caption);
-      button.addEventListener('click', () => openType(type));
+      button.addEventListener('click', () => applyType(type));
       bar.appendChild(button);
     });
-    const reference = formatDetails || $('scriptFormatToolbar')?.parentElement || $('scriptProjectToolbar');
+    // La barra vive fuera del contenedor #workspace que desplaza el guion: permanece siempre a la vista.
+    const reference = $('workspace') || formatDetails || $('scriptFormatToolbar')?.parentElement || $('scriptProjectToolbar');
     if (reference?.parentNode) reference.parentNode.insertBefore(bar, reference);
     else scriptPane.insertBefore(bar, scriptPane.firstChild);
   }

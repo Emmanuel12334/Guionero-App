@@ -84,7 +84,7 @@ const server = http.createServer((req, res) => {
       ['SCENE',['Scene','Escena']],
       ['ACTION',['Action','Acción']],
       ['CHARACTER',['Character','Personaje']],
-      ['PARENTHETICAL',['Parenthetical','Paréntesis']],
+      ['PARENTHETICAL',['Parenthetical','Paréntesis','Parentética']],
       ['DIALOGUE',['Dialogue','Diálogo']],
       ['TRANSITION',['Transition','Transición']]
     ];

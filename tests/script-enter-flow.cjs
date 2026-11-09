@@ -200,6 +200,25 @@ async function runScriptFlow(browser, options, label, withUndoRedo) {
     assert.deepEqual(afterReload.lines, beforeReload.lines, label + ': Guardar, cerrar y abrir conserva contenido y formatos');
     assert.equal(afterReload.lines.filter(line => line.type==='PARENTHETICAL').length, 1, label + ': no duplica parentéticas');
     assert.deepEqual(errors, [], label + ': sin excepciones de JavaScript');
+    // Tras CHARACTER -> DIALOGUE, un segundo Enter en el diálogo vacío conserva el selector original.
+    const lastLine = page.locator('#script .script-line').last();
+    await lastLine.click();
+    await page.keyboard.press('End');
+    if ((await lastLine.innerText()).trim()) await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    let pickerState = await lineState(page);
+    assert.equal(pickerState.pickerVisible, true, label + ': Enter posterior debe abrir el selector en una línea vacía');
+    assert.equal(pickerState.activeElement, 'script', label + ': el selector debe conservar el foco del editor');
+    await page.locator('#picker [data-pick="CHARACTER"]').click();
+    await page.keyboard.type('MATEO');
+    await page.keyboard.press('Enter');
+    await assertCaret(page, 'DIALOGUE', label + ': segundo caso CHARACTER -> DIALOGUE');
+    await page.keyboard.press('Enter');
+    pickerState = await lineState(page);
+    assert.equal(pickerState.pickerVisible, true, label + ': el diálogo vacío debe seguir permitiendo elegir otro elemento');
+    await page.locator('#picker [data-pick="ACTION"]').click();
+    await assertCaret(page, 'ACTION', label + ': selector original permite elegir ACTION tras CHARACTER -> DIALOGUE');
+
     console.log('PASS Script Enter and continuous typing ' + label);
   } finally {
     await context.close();
