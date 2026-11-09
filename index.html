@@ -3543,7 +3543,7 @@ body.android-device #paintToolbar {scrollbar-width:thin}
    const control=event.target.closest?.('button');
    if(!control||!['newScriptBtn','savedScriptsBrowseBtn','projectImportBtn','projectSaveBtn','projectSaveAsBtn','guioneroStructureBtn','guioneroSettingsBtn'].includes(control.id))return;
    requestAnimationFrame(closeSidebar);
-  });
+  },true);
   managementDock.addEventListener('change',event=>{
    if(event.target?.id==='savedScriptSelect')closeSidebar();
   });
