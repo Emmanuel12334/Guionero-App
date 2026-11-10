@@ -36,7 +36,7 @@ for (const asset of requiredMobileAssets) {
 }
 
 const cspTag = html.match(/<meta\b[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i)?.[0] || '';
-const cspValue = cspTag.match(/content=["']([^"']*)["']/i)?.[1] || '';
+const cspValue = cspTag.match(/\bcontent="([^"]*)"/i)?.[1] || '';
 const requiredCspParts = ["object-src 'none'", "base-uri 'self'", 'connect-src', 'identitytoolkit.googleapis.com', 'securetoken.googleapis.com'];
 const missingCsp = requiredCspParts.filter((part) => !cspValue.includes(part));
 if (missingCsp.length) {
