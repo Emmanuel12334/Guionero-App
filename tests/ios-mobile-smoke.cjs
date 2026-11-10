@@ -83,6 +83,7 @@ const server = http.createServer((req, res) => {
     const expectedLabels = [
       ['SCENE',['Scene','Escena']],
       ['ACTION',['Action','Acción']],
+      ['INTRO',['Intro']],
       ['CHARACTER',['Character','Personaje']],
       ['PARENTHETICAL',['Parenthetical','Paréntesis','Parentética']],
       ['DIALOGUE',['Dialogue','Diálogo']],
@@ -95,6 +96,37 @@ const server = http.createServer((req, res) => {
     await page.locator('#guioneroMobileScriptToolbar [data-script-type="ACTION"]').tap();
     await page.waitForFunction(() => document.querySelector('#script .script-line[data-type="ACTION"]'), null, { timeout: 5000 });
     assert.ok(await page.locator('#script').evaluate(el => el.isContentEditable), 'Script editor must remain the original contenteditable document');
+    const formatTopBefore = await page.locator('#guioneroMobileScriptToolbar').evaluate(el => el.getBoundingClientRect().top);
+    await page.locator('#workspace').evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await page.waitForTimeout(100);
+    const formatAfterScroll = await page.locator('#guioneroMobileScriptToolbar').evaluate(el => ({
+      top: el.getBoundingClientRect().top,
+      height: el.getBoundingClientRect().height,
+      display: getComputedStyle(el).display
+    }));
+    assert.ok(formatAfterScroll.height >= 48 && formatAfterScroll.display !== 'none', 'iPhone format bar must remain visible');
+    assert.ok(Math.abs(formatAfterScroll.top - formatTopBefore) < 2, 'iPhone format bar must not scroll with the screenplay');
+
+    // The hamburger drawer now owns the original project-management controls.
+    const menuButton = page.locator('#mobileMenuBtn');
+    await menuButton.tap();
+    assert.ok(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')), 'iPhone hamburger must open the drawer');
+    assert.equal(await page.locator('#projectManagementDock').evaluate(el => el.parentElement.id), 'sidebar');
+    assert.equal(await page.locator('#androidProjectManagementToggle').count(), 0, 'Old accordion must not be recreated');
+    for (const id of ['#newScriptBtn','#savedScriptsBrowseBtn','#savedScriptSelect','#projectImportBtn','#projectSaveBtn','#projectSaveAsBtn','#guioneroStructureBtn','#guioneroSettingsBtn']) {
+      assert.ok(await page.locator(id).isVisible(), id + ' must be accessible from the iPhone drawer');
+    }
+    await menuButton.tap();
+    assert.equal(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')), false, 'Hamburger must close the drawer');
+
+    await page.locator('#script .script-line').last().tap();
+    await page.setViewportSize({ width: 390, height: 570 });
+    await page.waitForTimeout(180);
+    assert.ok(await page.locator('#guioneroMobileScriptToolbar').isVisible(), 'iPhone format bar must remain visible while the virtual keyboard reduces the viewport');
+    assert.ok(await page.locator('body').evaluate(el => el.classList.contains('android-keyboard-visible')), 'The iPhone keyboard-safe layout must activate when the visual viewport shrinks');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(120);
+
 
     // Node must remain a real tab, not a screenshot/placeholder.
     await page.locator('#tabNote').tap();
