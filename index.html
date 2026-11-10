@@ -2600,12 +2600,13 @@ window.setInterval(async()=>{if(!dirty||switchingProject||Date.now()-lastSuccess
  if(projectTools)dock.appendChild(projectTools);
  const mountProjectDock=()=>{
    // Solo los navegadores táctiles Android/iPhone trasladan la gestión al menú hamburguesa.
+   // El propio contenedor desplazable de navegación aloja todas las opciones, sin un segundo scroll interno.
    // En Windows/escritorio se conserva el montaje original dentro de la tarjeta del proyecto.
    const mobile=window.__guioneroMobileTouchDevice===true;
    const sidebar=$('sidebar');
-   if(mobile&&sidebar){
-     const anchor=card&&card.parentNode===sidebar?card:sidebar.querySelector('.nav-search');
-     if(anchor)sidebar.insertBefore(dock,anchor);else sidebar.appendChild(dock);
+   const navScroll=sidebar?.querySelector('.nav-scroll');
+   if(mobile&&navScroll){
+     navScroll.insertBefore(dock,navScroll.firstChild);
      dock.classList.add('project-management-mobile');
      dock.classList.remove('project-management-desktop');
    }else if(card){
