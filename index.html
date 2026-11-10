@@ -2599,16 +2599,28 @@ window.setInterval(async()=>{if(!dirty||switchingProject||Date.now()-lastSuccess
  if(newBtn){newBtn.textContent='＋ NUEVO GUIÓN';newBtn.title='Crear un proyecto independiente';dock.appendChild(newBtn);}
  if(projectTools)dock.appendChild(projectTools);
  const mountProjectDock=()=>{
-   const mobile=document.body.classList.contains('android-device')||!!window.matchMedia?.('(max-width: 650px)').matches;
-   if(mobile&&scriptPane){scriptPane.insertBefore(dock,scriptPane.firstChild);dock.classList.add('project-management-mobile');}
-   else if(card){const meta=card.querySelector('.project-meta');if(meta)card.insertBefore(dock,meta);else card.appendChild(dock);dock.classList.remove('project-management-mobile');}
+   // Solo los navegadores táctiles Android/iPhone trasladan la gestión al menú hamburguesa.
+   // En Windows/escritorio se conserva el montaje original dentro de la tarjeta del proyecto.
+   const mobile=window.__guioneroMobileTouchDevice===true;
+   const sidebar=$('sidebar');
+   if(mobile&&sidebar){
+     const anchor=card&&card.parentNode===sidebar?card:sidebar.querySelector('.nav-search');
+     if(anchor)sidebar.insertBefore(dock,anchor);else sidebar.appendChild(dock);
+     dock.classList.add('project-management-mobile');
+     dock.classList.remove('project-management-desktop');
+   }else if(card){
+     const meta=card.querySelector('.project-meta');
+     if(meta)card.insertBefore(dock,meta);else card.appendChild(dock);
+     dock.classList.remove('project-management-mobile');
+     dock.classList.add('project-management-desktop');
+   }
  };
  const syncProjectControls=()=>document.body.classList.toggle('project-management-active',!!$('paneScript')?.classList.contains('active'));
  mountProjectDock();
  window.addEventListener('resize',()=>{mountProjectDock();syncProjectControls();});
  document.querySelectorAll('.studio-tab').forEach(b=>b.addEventListener('click',()=>setTimeout(syncProjectControls,0)));
  syncProjectControls();
- if(!$('guioneroProjectMobileStyle')){const style=document.createElement('style');style.id='guioneroProjectMobileStyle';style.textContent='@media(max-width:650px){.project-management-dock.project-management-mobile{margin:7px 8px 9px;padding:9px;border:1px solid var(--line);border-radius:10px;background:var(--panel);max-height:37vh;overflow:auto}.project-management-dock.project-management-mobile #newScriptBtn{flex:0 0 auto}.project-management-dock.project-management-mobile .script-project-toolbar{flex:0 0 auto}.project-management-dock.project-management-mobile #projectLibraryStatus{display:block}}';document.head.appendChild(style);}
+
  // Put the existing palette inside a small popover anchored to its shading button.
  const shadeBtn=$('scriptShadeBtn'),shadePalette=document.querySelector('#scriptFormatToolbar .shade-palette');
  if(shadeBtn&&shadePalette&&!shadeBtn.closest('.shade-tool')){
@@ -2826,9 +2838,7 @@ appTextObserver.observe(document.body,{subtree:true,childList:true,characterData
 </script>
 
 <style id="guionero-android-touch-update-style">
-body.android-device #projectManagementDock > .android-project-toggle{width:100%;min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--app);color:var(--ink);font-weight:800;text-align:left;touch-action:manipulation}
-body.android-device #projectManagementDock > .android-project-toggle .android-toggle-chevron{color:var(--accent);font-size:16px}
-body.android-device #projectManagementDock > .android-project-content[hidden],body.android-device #noteToolbarContent[hidden]{display:none!important}
+body.android-device #noteToolbarContent[hidden]{display:none!important}
 body.android-device #noteToolbarContent{display:flex;flex:1 0 100%;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
 body.android-device #noteToolbarToggle{width:100%;min-height:40px;justify-content:space-between;text-align:left;font-weight:800;touch-action:manipulation}
 body.android-device #noteCanvasWrap{touch-action:none;overscroll-behavior:contain}
@@ -2854,13 +2864,6 @@ const $=id=>document.getElementById(id);
 if(window.__guioneroMobileTouchDevice!==true)return;
 document.body.classList.add('android-device');
 ['tabNote','paneNote','tabPaint','panePaint'].forEach(id=>$(id)?.removeAttribute('hidden'));
-const projectDock=$('projectManagementDock');
-if(projectDock&&!projectDock.querySelector('.android-project-toggle')){
- const nodes=[...projectDock.childNodes],button=document.createElement('button'),content=document.createElement('div');
- button.type='button';button.className='android-project-toggle';button.id='androidProjectManagementToggle';button.setAttribute('aria-expanded','false');button.setAttribute('aria-controls','androidProjectManagementContent');button.innerHTML='<span>＋ Gestión de guiones</span><span class="android-toggle-chevron" aria-hidden="true">⌄</span>';
- content.className='android-project-content';content.id='androidProjectManagementContent';content.hidden=true;nodes.forEach(n=>content.appendChild(n));projectDock.append(button,content);
- button.addEventListener('click',()=>{const open=content.hidden;content.hidden=!open;button.setAttribute('aria-expanded',String(open));button.querySelector('.android-toggle-chevron').textContent=open?'⌃':'⌄';});
-}
 const nodeToolbar=document.querySelector('#paneNote .note-toolbar');
 if(nodeToolbar&&!$('noteToolbarToggle')){
  const children=[...nodeToolbar.childNodes],button=document.createElement('button'),content=document.createElement('div');
