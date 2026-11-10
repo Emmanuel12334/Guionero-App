@@ -70,7 +70,7 @@ try {
   assert.equal(await projectDock.evaluate(el=>el.parentElement.id),'sidebar','Project management must live inside the sidebar drawer');
   assert.equal(await projectDock.evaluate(el=>!!el.closest('#paneScript')),false,'Project management must be removed from the Script writing area');
   assert.equal(await page.locator('#scriptProjectToolbar').evaluate(el=>!!el.closest('#workspace')),false,'No project toolbar may remain inside the scrolling document');
-  assert.ok(await page.locator('#sidebarActions').count()===0 || await page.locator('.sidebar-actions').evaluate(el=>el.hidden),'Do not leave a duplicate New Script button in the drawer');
+  assert.ok(await page.locator('.sidebar-actions').evaluate(el=>el.hidden),'Do not leave a duplicate New Script button in the drawer');
   await menuButton.tap();
   assert.ok(await sidebar.evaluate(el=>el.classList.contains('open')),'The hamburger button must open the sidebar drawer');
   for (const id of ['#newScriptBtn','#savedScriptsBrowseBtn','#savedScriptSelect','#projectImportBtn','#projectSaveBtn','#projectSaveAsBtn','#guioneroStructureBtn','#guioneroSettingsBtn']) {
