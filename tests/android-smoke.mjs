@@ -31,7 +31,7 @@ async function center(page, selector) {
 }
 try {
   const mobile = await browser.newContext({
-    viewport:{width:393,height:852},deviceScaleFactor:2,isMobile:true,hasTouch:true,
+    viewport:{width:393,height:852},deviceScaleFactor:2,isMobile:true,hasTouch:true,acceptDownloads:true,
     userAgent:'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'
   });
   const page = await mobile.newPage();
@@ -58,21 +58,101 @@ try {
   const menuButton=page.locator('#mobileMenuBtn');
   const sidebar=page.locator('#sidebar');
   await menuButton.waitFor({state:'visible',timeout:5000});
+  const headerPosition=await page.evaluate(()=>{
+    const menu=document.getElementById('mobileMenuBtn').getBoundingClientRect();
+    const heading=document.querySelector('.topbar .doc-heading').getBoundingClientRect();
+    return {menuLeft:menu.left,headingLeft:heading.left,parent:document.getElementById('mobileMenuBtn').parentElement.className};
+  });
+  assert.ok(headerPosition.menuLeft<headerPosition.headingLeft,'Hamburger must be at the upper-left of the mobile header: '+JSON.stringify(headerPosition));
+  assert.equal(headerPosition.parent,'topbar','Hamburger must be a direct child of the main topbar');
   assert.equal(await page.locator('#androidProjectManagementToggle').count(),0,'The old management accordion must not be duplicated');
-  await menuButton.tap();
-  assert.ok(await sidebar.evaluate(el=>el.classList.contains('open')),'The hamburger button must open the sidebar drawer');
   const projectDock=page.locator('#projectManagementDock');
   assert.equal(await projectDock.evaluate(el=>el.parentElement.id),'sidebar','Project management must live inside the sidebar drawer');
+  assert.equal(await projectDock.evaluate(el=>!!el.closest('#paneScript')),false,'Project management must be removed from the Script writing area');
+  assert.equal(await page.locator('#scriptProjectToolbar').evaluate(el=>!!el.closest('#workspace')),false,'No project toolbar may remain inside the scrolling document');
+  assert.ok(await page.locator('.sidebar-actions').evaluate(el=>el.hidden),'Do not leave a duplicate New Script button in the drawer');
+  await menuButton.tap();
+  assert.ok(await sidebar.evaluate(el=>el.classList.contains('open')),'The hamburger button must open the sidebar drawer');
   for (const id of ['#newScriptBtn','#savedScriptsBrowseBtn','#savedScriptSelect','#projectImportBtn','#projectSaveBtn','#projectSaveAsBtn','#guioneroStructureBtn','#guioneroSettingsBtn']) {
     assert.ok(await page.locator(id).isVisible(), id+' must be accessible from the hamburger drawer');
   }
+
+  // Save and export remain functional from the drawer.
   await page.locator('#projectSaveBtn').tap();
-  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Selecting a project action should close the drawer');
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Save should close the drawer');
+  await menuButton.tap();
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('#projectSaveAsBtn').tap();
+  const projectDownload=await downloadPromise;
+  const exportedName=projectDownload.suggestedFilename();
+  assert.ok(exportedName.toLowerCase().endsWith('.guionero'),'Guardar como must export a native Guionero project: '+exportedName);
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Save as should close the drawer');
+
+  // Browse/open files uses the original native file picker.
+  await menuButton.tap();
+  const browsePickerPromise=page.waitForEvent('filechooser');
+  await page.locator('#savedScriptsBrowseBtn').tap();
+  const browsePicker=await browsePickerPromise;
+  await browsePicker.setFiles([]);
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Browse files should close the drawer');
+
+  // Import a real, minimal script-only project through the existing file input.
+  await menuButton.tap();
+  const importPickerPromise=page.waitForEvent('filechooser');
+  await page.locator('#projectImportBtn').tap();
+  const importPicker=await importPickerPromise;
+  const importedTitle='Proyecto importado desde el menú';
+  await importPicker.setFiles({
+    name:'proyecto-importado.guionero',
+    mimeType:'application/json',
+    buffer:Buffer.from(JSON.stringify({title:importedTitle,blocks:[{type:'SCENE',text:'INT. PRUEBA - DÍA'}]}))
+  });
+  await page.locator('#guionero-project-dialog-title').waitFor({state:'visible',timeout:8000});
+  assert.equal((await page.locator('#guionero-project-dialog-title').textContent()).trim(),'Importar proyecto');
+  await page.getByRole('button',{name:'Importar y abrir'}).tap();
+  await page.waitForFunction(title=>document.getElementById('mainTitle')?.value===title,importedTitle,{timeout:12000});
+  const importedProjectId=await page.evaluate(()=>window.__guioneroSafeStorage.getItem('guionero_active_project_id'));
+  assert.ok(importedProjectId,'Imported project must become the active project');
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Import should close the drawer');
+
+  // New project creates an independent project without deleting the imported one.
+  await menuButton.tap();
+  await page.locator('#newScriptBtn').tap();
+  await page.locator('#guionero-project-dialog-title').waitFor({state:'visible',timeout:8000});
+  assert.equal((await page.locator('#guionero-project-dialog-title').textContent()).trim(),'Crear un nuevo guion');
+  await page.getByRole('button',{name:'Sí, crear nuevo'}).tap();
+  await page.waitForFunction(id=>document.getElementById('mainTitle')?.value==='Mi guion para YouTube'&&window.__guioneroSafeStorage.getItem('guionero_active_project_id')!==id,importedProjectId,{timeout:15000});
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'New project should close the drawer before returning to Script');
+
+  // The saved-project selector can reopen the imported project after creating another one.
+  await menuButton.tap();
+  const importedOption=await page.locator('#savedScriptSelect').evaluate(el=>[...el.options].find(o=>o.textContent.includes('Proyecto importado desde el menú'))?.value||'');
+  assert.ok(importedOption,'Imported project must remain in the local library');
+  await page.locator('#savedScriptSelect').selectOption(importedOption);
+  await page.waitForFunction(title=>document.getElementById('mainTitle')?.value===title,importedTitle,{timeout:12000});
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Opening a saved project should close the drawer');
+
+  // Structure and configuration open their existing dialogs from the hamburger menu.
+  await menuButton.tap();
+  await page.locator('#guioneroStructureBtn').tap();
+  await page.locator('#guioneroStructureModal').waitFor({state:'visible',timeout:8000});
+  assert.ok(await page.locator('#guioneroStructureModal .guionero-structure-card').count()>0,'Structure library must open');
+  await page.locator('#guioneroStructureModal [data-close-structure]').tap();
+  assert.equal(await page.locator('#guioneroStructureModal').isHidden(),true);
+  await menuButton.tap();
+  await page.locator('#guioneroSettingsBtn').tap();
+  await page.locator('#guioneroSettingsModal').waitFor({state:'visible',timeout:8000});
+  assert.ok(await page.locator('#prefLanguage').isVisible(),'Settings must open');
+  await page.locator('#guioneroSettingsClose').tap();
+  assert.equal(await page.locator('#guioneroSettingsModal').isHidden(),true);
+
+  // A touch outside the sidebar must dismiss it without requiring another button.
   await menuButton.tap();
   assert.ok(await sidebar.evaluate(el=>el.classList.contains('open')));
-  await menuButton.tap();
-  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'The hamburger button must also close the drawer');
-  pass('Project management actions are reused inside the hamburger drawer');
+  await page.mouse.click(380,500);
+  await page.waitForTimeout(80);
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Touching outside must close the administration drawer');
+  pass('Hamburger left placement, full project administration, import/export, new/open/save, structures, settings and outside dismissal');
 
   const formatBar=page.locator('#guioneroMobileScriptToolbar');
   await formatBar.waitFor({state:'visible',timeout:5000});

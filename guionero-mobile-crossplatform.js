@@ -80,6 +80,13 @@
   const mobileMenu = $('mobileMenuBtn');
   const mobileSidebar = $('sidebar');
   if (mobileMenu && mobileSidebar) {
+    // En móviles táctiles el menú queda en el extremo izquierdo de la cabecera,
+    // fuera del grupo de acciones de la derecha. En escritorio este archivo no se ejecuta.
+    const mobileTopbar = document.querySelector('.topbar');
+    const documentHeading = mobileTopbar?.querySelector('.doc-heading');
+    if (mobileTopbar && documentHeading && mobileMenu.parentElement !== mobileTopbar) {
+      mobileTopbar.insertBefore(mobileMenu, documentHeading);
+    }
     const syncMenuState = () => {
       const open = mobileSidebar.classList.contains('open');
       mobileMenu.setAttribute('aria-expanded', String(open));
@@ -95,13 +102,15 @@
       mobileSidebar.classList.remove('open');
       syncMenuState();
     };
-    mobileSidebar.addEventListener('click', event => {
-      const action = event.target.closest(
+    // Cerrar antes de que actúen los botones. New Script usa un listener de captura
+    // que detiene el bubbling; por eso el cierre se delega en document en fase de captura.
+    document.addEventListener('click', event => {
+      const action = event.target.closest?.(
         '#newScriptBtn,#savedScriptsBrowseBtn,#projectImportBtn,#projectSaveBtn,' +
         '#projectSaveAsBtn,#guioneroStructureBtn,#guioneroSettingsBtn,.nav-item'
       );
-      if (action) closeDrawer();
-    });
+      if (action && mobileSidebar.contains(action)) closeDrawer();
+    }, true);
     $('savedScriptSelect')?.addEventListener('change', closeDrawer);
     syncMenuState();
   }
