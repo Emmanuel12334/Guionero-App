@@ -107,17 +107,41 @@ const server = http.createServer((req, res) => {
     assert.ok(formatAfterScroll.height >= 48 && formatAfterScroll.display !== 'none', 'iPhone format bar must remain visible');
     assert.ok(Math.abs(formatAfterScroll.top - formatTopBefore) < 2, 'iPhone format bar must not scroll with the screenplay');
 
-    // The hamburger drawer now owns the original project-management controls.
+    // The hamburger is on the upper-left and owns the original administration controls.
     const menuButton = page.locator('#mobileMenuBtn');
+    const headerPosition = await page.evaluate(() => {
+      const menu = document.getElementById('mobileMenuBtn').getBoundingClientRect();
+      const heading = document.querySelector('.topbar .doc-heading').getBoundingClientRect();
+      return { menuLeft: menu.left, headingLeft: heading.left, parent: document.getElementById('mobileMenuBtn').parentElement.className };
+    });
+    assert.ok(headerPosition.menuLeft < headerPosition.headingLeft, 'iPhone hamburger must be at the upper-left: ' + JSON.stringify(headerPosition));
+    assert.equal(headerPosition.parent, 'topbar');
     await menuButton.tap();
-    assert.ok(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')), 'iPhone hamburger must open the drawer');
+    const sidebar = page.locator('#sidebar');
+    assert.ok(await sidebar.evaluate(el => el.classList.contains('open')), 'iPhone hamburger must open the drawer');
     assert.equal(await page.locator('#projectManagementDock').evaluate(el => el.parentElement.id), 'sidebar');
+    assert.equal(await page.locator('#projectManagementDock').evaluate(el => !!el.closest('#paneScript')), false);
     assert.equal(await page.locator('#androidProjectManagementToggle').count(), 0, 'Old accordion must not be recreated');
     for (const id of ['#newScriptBtn','#savedScriptsBrowseBtn','#savedScriptSelect','#projectImportBtn','#projectSaveBtn','#projectSaveAsBtn','#guioneroStructureBtn','#guioneroSettingsBtn']) {
       assert.ok(await page.locator(id).isVisible(), id + ' must be accessible from the iPhone drawer');
     }
+    await page.locator('#projectSaveBtn').tap();
+    assert.equal(await sidebar.evaluate(el => el.classList.contains('open')), false, 'Save should close the drawer');
+
     await menuButton.tap();
-    assert.equal(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')), false, 'Hamburger must close the drawer');
+    await page.locator('#guioneroStructureBtn').tap();
+    await page.locator('#guioneroStructureModal').waitFor({ state: 'visible', timeout: 8000 });
+    assert.ok(await page.locator('#guioneroStructureModal .guionero-structure-card').count() > 0, 'iPhone structure library must open');
+    await page.locator('#guioneroStructureModal [data-close-structure]').tap();
+    await menuButton.tap();
+    await page.locator('#guioneroSettingsBtn').tap();
+    await page.locator('#guioneroSettingsModal').waitFor({ state: 'visible', timeout: 8000 });
+    assert.ok(await page.locator('#prefLanguage').isVisible(), 'iPhone settings must open');
+    await page.locator('#guioneroSettingsClose').tap();
+    await menuButton.tap();
+    await page.mouse.click(378, 500);
+    await page.waitForTimeout(80);
+    assert.equal(await sidebar.evaluate(el => el.classList.contains('open')), false, 'Touching outside must close the iPhone drawer');
 
     await page.locator('#script .script-line').last().tap();
     await page.setViewportSize({ width: 390, height: 570 });
