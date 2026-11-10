@@ -303,18 +303,20 @@ async function desktopIsolation(browser) {
   let safari=null;
   try{
     await desktopIsolation(chrome);
-    const android=await openMobile(chrome,devices['Pixel 7'],'Android Pixel 7 emulation');
-    try{await testToolbarAndDrawer(android);await testAdminActions(android);}finally{await android.context.close();}
-    safari=await webkit.launch({headless:true});
-    const iphone=await openMobile(safari,{
-      ...devices['iPhone 13'],
-      viewport:{width:390,height:844},
-      deviceScaleFactor:3,
-      isMobile:true,
-      hasTouch:true,
-      userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
-    },'iPhone 13 Safari WebKit emulation');
-    try{await testToolbarAndDrawer(iphone);await testAdminActions(iphone);}finally{await iphone.context.close();}
+    if (!process.argv.includes('--desktop-only')) {
+      const android=await openMobile(chrome,devices['Pixel 7'],'Android Pixel 7 emulation');
+      try{await testToolbarAndDrawer(android);await testAdminActions(android);}finally{await android.context.close();}
+      safari=await webkit.launch({headless:true});
+      const iphone=await openMobile(safari,{
+        ...devices['iPhone 13'],
+        viewport:{width:390,height:844},
+        deviceScaleFactor:3,
+        isMobile:true,
+        hasTouch:true,
+        userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+      },'iPhone 13 Safari WebKit emulation');
+      try{await testToolbarAndDrawer(iphone);await testAdminActions(iphone);}finally{await iphone.context.close();}
+    }
   }finally{
     if(safari)await safari.close();
     await chrome.close();
