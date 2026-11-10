@@ -191,7 +191,10 @@ async function mobileMenuAndKeyboard(browser, options, label) {
       document.getElementById('mobileMenuBtn')?.getAttribute('aria-expanded') === 'false');
     await menu.click();
     await page.waitForFunction(() => document.getElementById('sidebar')?.classList.contains('open'));
-    await page.locator('#mainTitle').click();
+    // Simulate a real pointerdown on the uncovered page area; the drawer overlays the title field.
+    await page.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles:true, pointerType:'touch', clientX:window.innerWidth-2, clientY:window.innerHeight/2
+    })));
     await page.waitForFunction(() => !document.getElementById('sidebar')?.classList.contains('open'));
     await menu.click();
     await page.waitForFunction(() => document.getElementById('sidebar')?.classList.contains('open'));
