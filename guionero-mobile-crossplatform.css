@@ -419,3 +419,9 @@ body.guionero-mobile-device #mobileMenuBtn[aria-expanded="true"] {
     min-height: 44px;
   }
 }
+
+/* Keep the hamburger control above the open drawer so it can close it. */
+body.guionero-mobile-device #mobileMenuBtn {
+  position: relative;
+  z-index: 1002;
+}
