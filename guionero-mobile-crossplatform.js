@@ -161,15 +161,15 @@
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && sidebar.classList.contains('open')) closeDrawer();
     });
-    projectDock.addEventListener('click', event => {
-      const control = event.target.closest('button');
-      if (!control) return;
-      const actionIds = new Set([
-        'newScriptBtn','savedScriptsBrowseBtn','projectImportBtn','projectSaveBtn',
-        'projectSaveAsBtn','guioneroStructureBtn','guioneroSettingsBtn'
-      ]);
-      if (actionIds.has(control.id)) setTimeout(closeDrawer, 0);
-    });
+    const actionIds = new Set([
+      'newScriptBtn','savedScriptsBrowseBtn','projectImportBtn','projectSaveBtn',
+      'projectSaveAsBtn','guioneroStructureBtn','guioneroSettingsBtn'
+    ]);
+    // Capture at the document level because the existing New Project handler stops propagation.
+    document.addEventListener('click', event => {
+      const control = event.target.closest?.('button');
+      if (control && actionIds.has(control.id)) setTimeout(closeDrawer, 0);
+    }, true);
     $('savedScriptSelect')?.addEventListener('change', () => setTimeout(closeDrawer, 0));
   }
 
