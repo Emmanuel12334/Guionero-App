@@ -55,16 +55,36 @@ try {
   assert.ok(shell.scrollWidth <= shell.width + 2, 'Android layout has horizontal page overflow: '+shell.scrollWidth+' vs '+shell.width);
   pass('Android detection and responsive shell',JSON.stringify(shell));
 
-  const projToggle=page.locator('#androidProjectManagementToggle');
-  await projToggle.waitFor({state:'visible',timeout:5000});
-  const projPanel=page.locator('#androidProjectManagementContent');
-  assert.equal(await projPanel.isHidden(),true);
-  await projToggle.click();
-  assert.equal(await projPanel.isVisible(),true);
-  for (const id of ['#newScriptBtn','#projectImportBtn','#projectSaveAsBtn']) assert.ok(await page.locator(id).isVisible(), id+' must be accessible while expanded');
-  await projToggle.click();
-  assert.equal(await projPanel.isHidden(),true);
-  pass('Script project accordion opens and closes');
+  const menuButton=page.locator('#mobileMenuBtn');
+  const sidebar=page.locator('#sidebar');
+  await menuButton.waitFor({state:'visible',timeout:5000});
+  assert.equal(await page.locator('#androidProjectManagementToggle').count(),0,'The old management accordion must not be duplicated');
+  await menuButton.tap();
+  assert.ok(await sidebar.evaluate(el=>el.classList.contains('open')),'The hamburger button must open the sidebar drawer');
+  const projectDock=page.locator('#projectManagementDock');
+  assert.equal(await projectDock.evaluate(el=>el.parentElement.id),'sidebar','Project management must live inside the sidebar drawer');
+  for (const id of ['#newScriptBtn','#savedScriptsBrowseBtn','#savedScriptSelect','#projectImportBtn','#projectSaveBtn','#projectSaveAsBtn','#guioneroStructureBtn','#guioneroSettingsBtn']) {
+    assert.ok(await page.locator(id).isVisible(), id+' must be accessible from the hamburger drawer');
+  }
+  await page.locator('#projectSaveBtn').tap();
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Selecting a project action should close the drawer');
+  await menuButton.tap();
+  assert.ok(await sidebar.evaluate(el=>el.classList.contains('open')));
+  await menuButton.tap();
+  assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'The hamburger button must also close the drawer');
+  pass('Project management actions are reused inside the hamburger drawer');
+
+  const formatBar=page.locator('#guioneroMobileScriptToolbar');
+  await formatBar.waitFor({state:'visible',timeout:5000});
+  const formatTypes=await formatBar.locator('button').evaluateAll(nodes=>nodes.map(node=>node.dataset.scriptType));
+  for(const type of ['SCENE','CHARACTER','DIALOGUE','INTRO','ACTION','PARENTHETICAL','TRANSITION']) assert.ok(formatTypes.includes(type),'Mobile format bar must retain '+type);
+  const formatTopBefore=await formatBar.evaluate(el=>el.getBoundingClientRect().top);
+  await page.locator('#workspace').evaluate(el=>{el.scrollTop=el.scrollHeight;});
+  await page.waitForTimeout(120);
+  const formatAfterScroll=await formatBar.evaluate(el=>({top:el.getBoundingClientRect().top,visible:getComputedStyle(el).display!=='none'&&el.getBoundingClientRect().height>0}));
+  assert.equal(formatAfterScroll.visible,true,'Format bar must stay visible during document scrolling');
+  assert.ok(Math.abs(formatAfterScroll.top-formatTopBefore)<2,'Format bar must not move when the document scrolls');
+  pass('All seven Script format controls remain visible outside the scrolling document');
 
   const focusButton=page.locator('#androidScriptFocusButton');
   await focusButton.waitFor({state:'visible',timeout:5000});
@@ -95,6 +115,17 @@ try {
   await page.setViewportSize({width:393,height:Math.max(430,Math.round(heightBeforeKeyboard-230))});
   await page.waitForTimeout(160);
   assert.ok(await page.locator('body').evaluate(el=>el.classList.contains('android-keyboard-visible')),'Visual viewport reduction while editing should activate keyboard-safe layout');
+  assert.ok(await formatBar.isVisible(),'The Script format bar must remain visible while the virtual keyboard is open');
+  const keyboardGeometry=await page.evaluate(()=>{
+    const bar=document.querySelector('#guioneroMobileScriptToolbar').getBoundingClientRect();
+    const workspace=document.querySelector('#workspace').getBoundingClientRect();
+    const selection=window.getSelection(),node=selection?.anchorNode?.nodeType===1?selection.anchorNode:selection?.anchorNode?.parentElement;
+    const line=node?.closest?.('#script .script-line')||document.querySelector('#script .script-line');
+    const active=line?.getBoundingClientRect();
+    return {barTop:bar.top,barBottom:bar.bottom,workspaceTop:workspace.top,workspaceBottom:workspace.bottom,lineTop:active?.top,lineBottom:active?.bottom};
+  });
+  assert.ok(keyboardGeometry.barBottom<=keyboardGeometry.workspaceTop+2,'The format bar must not cover the writing area');
+  assert.ok(keyboardGeometry.lineBottom===undefined||keyboardGeometry.lineBottom<=keyboardGeometry.workspaceBottom+40,'The active line should remain near the visible writing area');
   await page.setViewportSize({width:393,height:852});
   await page.waitForTimeout(160);
   assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('android-keyboard-visible')),false);

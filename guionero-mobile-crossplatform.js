@@ -6,6 +6,139 @@
   const $ = (id) => document.getElementById(id);
   const body = document.body;
   body.classList.add('guionero-mobile-device');
+  // El estilo se agrega al final de la cascada para que las reglas móviles anteriores
+  // no puedan esconder la barra ni volver a insertar Gestión de guiones en el editor.
+  if (!$('guioneroMobileScriptDrawerStyle')) {
+    const mobileStyle = document.createElement('style');
+    mobileStyle.id = 'guioneroMobileScriptDrawerStyle';
+    mobileStyle.textContent = `
+      body.guionero-mobile-device .sidebar {
+        overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch;
+      }
+      body.guionero-mobile-device #projectManagementDock.project-management-mobile {
+        flex:0 0 auto; max-height:none!important; overflow:visible!important;
+        margin:9px 12px 13px; padding:10px; border:1px solid var(--line);
+        border-radius:11px; background:var(--app);
+      }
+      body.guionero-mobile-device #projectManagementDock.project-management-mobile::before {
+        content:"ADMINISTRACIÓN DEL PROYECTO"; display:block; margin:0 0 8px;
+        color:var(--muted); font:800 9px/1.4 system-ui,sans-serif; letter-spacing:.1em;
+      }
+      body.guionero-mobile-device #projectManagementDock .script-project-toolbar {
+        display:flex; flex-direction:column; align-items:stretch; flex-wrap:nowrap;
+        gap:7px; width:100%; max-width:100%;
+      }
+      body.guionero-mobile-device #projectManagementDock .script-project-toolbar>* {
+        width:100%; max-width:100%; min-width:0;
+      }
+      body.guionero-mobile-device #projectManagementDock #projectLibraryStatus {
+        display:block; white-space:normal;
+      }
+      body.guionero-mobile-device #paneScript.active {
+        display:flex; flex:1 1 auto; flex-direction:column;
+        min-width:0; min-height:0; overflow:hidden;
+      }
+      body.guionero-mobile-device #paneScript>#workspace {
+        flex:1 1 auto; min-width:0; min-height:0; overflow:auto;
+        overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+      }
+      body.guionero-mobile-device #guioneroMobileScriptToolbar {
+        position:relative; z-index:1005; display:flex!important; flex:0 0 auto;
+        align-items:stretch; width:100%; max-width:100%;
+        min-height:58px; max-height:60px; margin:0; padding:6px 8px;
+        overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap;
+        border:0; border-bottom:1px solid var(--line); border-radius:0;
+        background:var(--panel); box-shadow:0 4px 12px rgba(0,0,0,.06);
+        -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
+        scrollbar-width:none; touch-action:pan-x; visibility:visible!important;
+      }
+      body.guionero-mobile-device #guioneroMobileScriptToolbar::-webkit-scrollbar {display:none}
+      body.guionero-mobile-device #guioneroMobileScriptToolbar button {
+        flex:0 0 auto; min-width:68px; min-height:44px; padding:4px 8px;
+        touch-action:manipulation;
+      }
+      body.guionero-mobile-device.android-script-focus #guioneroMobileScriptToolbar,
+      body.guionero-mobile-device.android-keyboard-visible #guioneroMobileScriptToolbar {
+        display:flex!important; visibility:visible!important;
+      }
+      body.guionero-mobile-device #mobileMenuBtn {
+        position:relative; z-index:1002;
+      }
+      body.guionero-mobile-device #mobileMenuBtn[aria-expanded="true"] {
+        border-color:var(--accent); background:var(--accent-soft); color:var(--accent);
+      }
+      @media (orientation:landscape) and (max-height:520px) {
+        body.guionero-mobile-device #guioneroMobileScriptToolbar {
+          min-height:52px; max-height:54px; padding-top:4px; padding-bottom:4px;
+        }
+      }`;
+    document.head.appendChild(mobileStyle);
+  }
+
+  // El menú de las tres rayitas abre el mismo drawer que contiene la gestión.
+  const mobileMenu = $('mobileMenuBtn');
+  const mobileSidebar = $('sidebar');
+  if (mobileMenu && mobileSidebar) {
+    const syncMenuState = () => {
+      const open = mobileSidebar.classList.contains('open');
+      mobileMenu.setAttribute('aria-expanded', String(open));
+      mobileMenu.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+      mobileMenu.title = open ? 'Cerrar menú' : 'Abrir menú';
+    };
+    mobileMenu.addEventListener('click', () => requestAnimationFrame(syncMenuState));
+    if ('MutationObserver' in window) {
+      const drawerObserver = new MutationObserver(syncMenuState);
+      drawerObserver.observe(mobileSidebar, {attributes:true, attributeFilter:['class']});
+    }
+    const closeDrawer = () => {
+      mobileSidebar.classList.remove('open');
+      syncMenuState();
+    };
+    mobileSidebar.addEventListener('click', event => {
+      const action = event.target.closest(
+        '#newScriptBtn,#savedScriptsBrowseBtn,#projectImportBtn,#projectSaveBtn,' +
+        '#projectSaveAsBtn,#guioneroStructureBtn,#guioneroSettingsBtn,.nav-item'
+      );
+      if (action) closeDrawer();
+    });
+    $('savedScriptSelect')?.addEventListener('change', closeDrawer);
+    syncMenuState();
+  }
+
+  // Cuando el teclado reduce el viewport, conserva visible la línea que tiene el cursor.
+  let activeLineFrame = 0;
+  const keepActiveScriptLineVisible = () => {
+    if (activeLineFrame) cancelAnimationFrame(activeLineFrame);
+    activeLineFrame = requestAnimationFrame(() => {
+      const workspace = $('workspace');
+      const editor = $('script');
+      if (!workspace || !editor || !editor.contains(document.activeElement) &&
+          document.activeElement !== editor) return;
+      const selection = window.getSelection?.();
+      let node = selection?.anchorNode || document.activeElement;
+      if (node?.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      const line = node?.closest?.('#script .script-line') ||
+        editor.querySelector('.script-line[data-active="true"]');
+      if (!line) return;
+      const view = workspace.getBoundingClientRect();
+      const rect = line.getBoundingClientRect();
+      const margin = 12;
+      if (rect.bottom > view.bottom - margin) {
+        workspace.scrollTop += rect.bottom - view.bottom + margin;
+      } else if (rect.top < view.top + margin) {
+        workspace.scrollTop -= view.top - rect.top + margin;
+      }
+    });
+  };
+  document.addEventListener('focusin', event => {
+    if (event.target === $('script') || $('script')?.contains(event.target)) {
+      keepActiveScriptLineVisible();
+    }
+  }, true);
+  window.visualViewport?.addEventListener('resize', keepActiveScriptLineVisible, {passive:true});
+  window.visualViewport?.addEventListener('scroll', keepActiveScriptLineVisible, {passive:true});
+
 
   function mobileToast(message) {
     const toast = $('toast');
