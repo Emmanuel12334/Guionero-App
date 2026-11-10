@@ -62,6 +62,9 @@
       body.guionero-mobile-device.android-keyboard-visible #guioneroMobileScriptToolbar {
         display:flex!important; visibility:visible!important;
       }
+      body.guionero-mobile-device #mobileMenuBtn {
+        position:relative; z-index:1002;
+      }
       body.guionero-mobile-device #mobileMenuBtn[aria-expanded="true"] {
         border-color:var(--accent); background:var(--accent-soft); color:var(--accent);
       }
