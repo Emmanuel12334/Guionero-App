@@ -3517,7 +3517,16 @@ body.android-device #paintToolbar {scrollbar-width:thin}
  syncViewport();
 
  const menu=$('mobileMenuBtn'),sidebar=$('sidebar');
- const closeSidebar=()=>sidebar?.classList.remove('open');
+ if(menu){menu.setAttribute('aria-controls','sidebar');menu.setAttribute('aria-expanded','false');}
+ const syncSidebarMenu=()=>{
+  const open=!!sidebar?.classList.contains('open');
+  menu?.setAttribute('aria-expanded',String(open));
+  menu?.setAttribute('aria-label',open?'Cerrar menú':'Abrir menú');
+  if(menu)menu.title=open?'Cerrar menú':'Abrir menú';
+ };
+ const closeSidebar=()=>{sidebar?.classList.remove('open');syncSidebarMenu();};
+ // The original menu click handler owns the open/close action; this only keeps its mobile state accessible.
+ menu?.addEventListener('click',()=>requestAnimationFrame(syncSidebarMenu));
  document.addEventListener('pointerdown',e=>{
   if(sidebar?.classList.contains('open')&&!sidebar.contains(e.target)&&!menu?.contains(e.target))closeSidebar();
  });
