@@ -20,7 +20,7 @@ const requiredIds = [
   'guioneroSettingsBtn',
 ];
 const missing = requiredIds.filter((id) =>
-  !html.includes('id="' + id + '"') && !html.includes("id='" + id + "'")
+  !new RegExp("\\bid=[\"']" + id + "[\"']").test(html)
 );
 if (missing.length) {
   console.error('ERROR: faltan elementos esenciales: ' + missing.join(', '));
