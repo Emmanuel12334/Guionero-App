@@ -127,6 +127,103 @@ body.guionero-mobile-device #guioneroMobileScriptToolbar .mobile-tool-icon {
   color: var(--accent);
 }
 
+/* Script: the format rail is a sibling of the scrolling paper, directly below the topbar. */
+body.guionero-mobile-device #guioneroMobileScriptToolbar {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  align-self: stretch;
+  box-sizing: border-box;
+  min-height: 58px;
+  margin: 0;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  padding-left: max(8px, env(safe-area-inset-left, 0px));
+  padding-right: max(8px, env(safe-area-inset-right, 0px));
+  border-radius: 0 0 10px 10px;
+  scroll-padding-inline: 8px;
+  overscroll-behavior-x: contain;
+  background: var(--panel);
+  box-shadow: 0 3px 10px rgba(0,0,0,.06);
+}
+
+/* Keep the existing project controls inside the hamburger drawer, not above the screenplay. */
+body.guionero-mobile-device .sidebar-actions:empty {
+  display: none !important;
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  max-height: none;
+  overflow: visible;
+  margin: 8px 0 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--app);
+  box-shadow: 0 4px 14px rgba(0,0,0,.05);
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile #newScriptBtn {
+  display: flex;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  justify-content: center;
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile .script-project-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile .script-project-toolbar > * {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile .script-project-toolbar button,
+body.guionero-mobile-device .project-management-dock.project-management-mobile .script-project-toolbar select {
+  min-height: 44px;
+  white-space:normal;
+  touch-action: manipulation;
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile #savedScriptSelect {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile #projectLibraryStatus {
+  display: block;
+  overflow-wrap: anywhere;
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile .guionero-management-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex: 0 0 auto;
+  gap: 7px;
+  min-width: 0;
+}
+body.guionero-mobile-device .project-management-dock.project-management-mobile .guionero-management-actions button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 8px;
+  white-space: normal;
+  line-height: 1.2;
+}
+
 /* Paint: a white dotted infinite-feeling navigation surface. Content stays editable
    in its original layers and image/text object model; this does not flatten projects. */
 body.guionero-mobile-device #paintWorkarea {
