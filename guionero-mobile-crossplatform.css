@@ -157,12 +157,9 @@ body.guionero-mobile-device .project-management-dock.project-management-mobile {
   flex-direction: column;
   gap: 9px;
   min-width: 0;
-  max-height: min(46dvh, 380px);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  margin: 8px 10px 12px;
+  max-height: none;
+  overflow: visible;
+  margin: 8px 0 12px;
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 11px;
