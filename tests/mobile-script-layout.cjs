@@ -213,6 +213,8 @@ async function mobileMenuAndKeyboard(browser, options, label) {
     await page.waitForFunction(() => document.getElementById('guioneroStructureModal')?.hidden === false);
     await page.locator('#guioneroStructureModal [data-close-structure]').click();
     await page.waitForFunction(() => document.getElementById('guioneroStructureModal')?.hidden === true);
+    await dock.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await page.locator('#guioneroSettingsBtn').evaluate(el => el.scrollIntoView({block:'nearest',inline:'nearest'}));
     await page.locator('#guioneroSettingsBtn').click();
     await page.waitForFunction(() => document.getElementById('guioneroSettingsModal')?.hidden === false);
     await page.locator('#guioneroSettingsClose').click();
