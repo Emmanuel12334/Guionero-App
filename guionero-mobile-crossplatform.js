@@ -71,6 +71,108 @@
     else scriptPane.insertBefore(bar, scriptPane.firstChild);
   }
 
+  /* Mobile Script layout: keep the type controls above the only scrolling document area. */
+  if (scriptPane && script && $('workspace') && $('guioneroMobileScriptToolbar')) {
+    const style = document.createElement('style');
+    style.id = 'guioneroMobileScriptLayoutStyle';
+    style.textContent = [
+      'body.guionero-mobile-device #paneScript{display:flex!important;flex:1 1 auto;flex-direction:column;min-width:0;min-height:0;overflow:hidden}',
+      'body.guionero-mobile-device #guioneroMobileScriptToolbar{position:relative!important;top:auto!important;left:auto!important;right:auto!important;z-index:30;display:flex!important;flex:0 0 auto;align-self:stretch;box-sizing:border-box;width:100%;max-width:100%;min-height:58px;margin:0;padding:7px max(9px,env(safe-area-inset-right,0px)) 7px max(9px,env(safe-area-inset-left,0px));overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-bottom:1px solid var(--line);background:var(--panel)}',
+      'body.guionero-mobile-device #guioneroMobileScriptToolbar::-webkit-scrollbar{display:none}',
+      'body.guionero-mobile-device #guioneroMobileScriptToolbar .guionero-mobile-script-tool{flex:0 0 auto;min-width:68px;min-height:44px;padding:4px 8px;white-space:nowrap;touch-action:manipulation}',
+      'body.guionero-mobile-device #workspace{flex:1 1 0;min-width:0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scroll-padding-top:10px;scroll-padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}',
+      'body.guionero-mobile-device.android-keyboard-visible #guioneroMobileScriptToolbar{display:flex!important;visibility:visible!important}',
+      'body.guionero-mobile-device.android-keyboard-visible #workspace{min-height:0;overflow-y:auto}',
+      'body.guionero-mobile-device #sidebar .sidebar-actions:empty{display:none!important}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock{display:flex;flex:0 1 auto;flex-direction:column;gap:8px;box-sizing:border-box;width:100%;max-width:100%;max-height:min(43dvh,390px);min-height:0;margin:0;padding:11px 12px;overflow-x:hidden;overflow-y:auto;border:0;border-bottom:1px solid var(--line);border-radius:0;background:var(--panel);overscroll-behavior:contain;scrollbar-width:thin}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock .guionero-mobile-admin-heading{flex:0 0 auto;padding:2px 1px 7px;border-bottom:1px solid var(--line);color:var(--muted);font:850 10px/1.3 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock #newScriptBtn{display:flex;width:100%;min-height:44px;justify-content:center;align-items:center}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock .script-project-toolbar{display:flex;flex:0 0 auto;flex-direction:column;align-items:stretch;gap:7px;width:100%;max-width:100%;padding:0;border:0;background:transparent}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock .script-project-toolbar>*{box-sizing:border-box;width:100%;max-width:100%;min-width:0}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock .script-project-toolbar .project-toolbar-label{padding:3px 1px;color:var(--muted);font:850 10px/1.3 system-ui,sans-serif;letter-spacing:.1em}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock .script-project-toolbar select,body.guionero-mobile-device #sidebar #projectManagementDock .script-project-toolbar button{min-height:44px}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock .script-save-indicator{min-height:28px}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock #projectLibraryStatus{display:block;min-height:0;overflow-wrap:anywhere}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock .guionero-management-actions{display:flex;flex:0 0 auto;gap:7px;width:100%}',
+      'body.guionero-mobile-device #sidebar #projectManagementDock .guionero-management-actions>*{flex:1 1 0;min-width:0;min-height:44px;padding:7px 6px;white-space:normal}',
+      'body.guionero-mobile-device #sidebar .project-card{flex:0 0 auto;margin:8px 12px 12px}',
+      'body.guionero-mobile-device #sidebar .nav-scroll{min-height:0}'
+    ].join('');
+    document.head.appendChild(style);
+  }
+
+  /* Reuse the hamburger drawer for every existing Script project-management control. */
+  const sidebar = $('sidebar');
+  const menuButton = $('mobileMenuBtn');
+  const projectDock = $('projectManagementDock');
+  if (sidebar && menuButton && projectDock) {
+    const unwrapLegacyMobileToggle = () => {
+      const content = projectDock.querySelector(':scope > .android-project-content');
+      if (content) {
+        while (content.firstChild) projectDock.insertBefore(content.firstChild, content);
+        content.remove();
+      }
+      projectDock.querySelector(':scope > .android-project-toggle')?.remove();
+    };
+    const ensureProjectDockInDrawer = () => {
+      unwrapLegacyMobileToggle();
+      projectDock.classList.remove('project-management-mobile');
+      projectDock.classList.add('guionero-mobile-project-drawer');
+      if (!projectDock.querySelector('.guionero-mobile-admin-heading')) {
+        const heading = document.createElement('div');
+        heading.className = 'guionero-mobile-admin-heading';
+        heading.textContent = 'GESTIÓN DE GUIONES';
+        projectDock.insertBefore(heading, projectDock.firstChild);
+      }
+      const anchor = sidebar.querySelector('.project-card') || sidebar.querySelector('.nav-search') || sidebar.querySelector('.nav-scroll');
+      if (anchor && projectDock.parentNode !== sidebar) sidebar.insertBefore(projectDock, anchor);
+      else if (!anchor && projectDock.parentNode !== sidebar) sidebar.appendChild(projectDock);
+      const emptyActions = sidebar.querySelector('.sidebar-actions');
+      if (emptyActions && !emptyActions.children.length) emptyActions.remove();
+    };
+    ensureProjectDockInDrawer();
+
+    // The legacy mount routine moves this node back into Script on viewport resize.
+    // Re-home the same DOM node after those resizes (including virtual-keyboard changes).
+    const layoutRoot = document.querySelector('.app') || document.body;
+    if ('MutationObserver' in window) {
+      const drawerObserver = new MutationObserver(() => {
+        if (projectDock.parentNode !== sidebar) ensureProjectDockInDrawer();
+      });
+      drawerObserver.observe(layoutRoot, { childList:true, subtree:true });
+    }
+    window.addEventListener('resize', ensureProjectDockInDrawer, { passive:true });
+    window.visualViewport?.addEventListener('resize', ensureProjectDockInDrawer, { passive:true });
+    window.addEventListener('orientationchange', ensureProjectDockInDrawer, { passive:true });
+
+    const closeDrawer = () => {
+      sidebar.classList.remove('open');
+      menuButton.setAttribute('aria-expanded', 'false');
+    };
+    menuButton.setAttribute('aria-haspopup', 'true');
+    menuButton.setAttribute('aria-controls', 'sidebar');
+    menuButton.setAttribute('aria-expanded', String(sidebar.classList.contains('open')));
+    menuButton.addEventListener('click', () => {
+      requestAnimationFrame(() => menuButton.setAttribute('aria-expanded', String(sidebar.classList.contains('open'))));
+    });
+    document.addEventListener('pointerdown', event => {
+      if (sidebar.classList.contains('open') && !sidebar.contains(event.target) && !menuButton.contains(event.target)) closeDrawer();
+    }, true);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && sidebar.classList.contains('open')) closeDrawer();
+    });
+    const actionIds = new Set([
+      'newScriptBtn','savedScriptsBrowseBtn','projectImportBtn','projectSaveBtn',
+      'projectSaveAsBtn','guioneroStructureBtn','guioneroSettingsBtn'
+    ]);
+    // Capture at the document level because the existing New Project handler stops propagation.
+    document.addEventListener('click', event => {
+      const control = event.target.closest?.('button');
+      if (control && actionIds.has(control.id)) setTimeout(closeDrawer, 0);
+    }, true);
+    $('savedScriptSelect')?.addEventListener('change', () => setTimeout(closeDrawer, 0));
+  }
+
   /* Paint: surface common actions without replacing the original controls. */
   const paintPane = $('panePaint');
   const dock = $('androidPaintDock');
