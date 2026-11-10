@@ -53,7 +53,7 @@ Los nombres de las claves, las bases IndexedDB y el orden de guardado se describ
 
 La sincronización en la nube **sí está incluida**, pero no viene configurada automáticamente. Para activarla, cada usuario debe proporcionar la API Key de una aplicación web Firebase, la URL de Realtime Database y una cuenta con Email/Password; también debe configurar las reglas de la base de datos. Las instrucciones aparecen en la ventana **SYNC** de la aplicación.
 
-La configuración y los tokens de sesión se guardan en el almacenamiento del navegador de ese dispositivo. La contraseña no se guarda como parte de la sesión persistente. No compartas los tokens, la cuenta ni el archivo de configuración; desconecta la sincronización en equipos que no controles. Firebase necesita conexión a Internet.
+La configuración y los tokens de sesión se guardan en el almacenamiento del navegador de ese dispositivo. La contraseña no se guarda como parte de la sesión persistente. No compartas los tokens, tus credenciales ni la API Key configurada; desconecta la sincronización en equipos que no controles. Firebase necesita conexión a Internet.
 
 La política CSP actual limita `object-src`, `base-uri` y los destinos `connect-src` necesarios para el funcionamiento local y Firebase. Es una defensa limitada de seguridad; por sí sola no sustituye la sanitización de contenido ni una política estricta de scripts.
 
