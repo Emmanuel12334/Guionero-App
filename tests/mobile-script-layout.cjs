@@ -152,7 +152,10 @@ async function mobileMenuAndKeyboard(browser, options, label) {
         inWorkspace:panel.closest('#workspace')!==null,
         toggle:!!document.getElementById('androidProjectManagementToggle'),
         menuClosed:!sidebar.classList.contains('open'),
-        panelBeforeCard:!!document.querySelector('#sidebar > #projectManagementDock + .project-card'),
+        panelIsFirstNavChild:panel.parentElement?.classList.contains('nav-scroll') &&
+          panel.parentElement.firstElementChild===panel,
+        navScrollsForDrawer:!!panel.closest('.nav-scroll') &&
+          getComputedStyle(panel.closest('.nav-scroll')).overflowY !== 'visible',
         newScriptInside:panel.contains(document.getElementById('newScriptBtn')),
         allExistingActionsInside:[
           'scriptProjectToolbar','savedScriptsBrowseBtn','savedScriptSelect','projectImportBtn',
@@ -168,7 +171,8 @@ async function mobileMenuAndKeyboard(browser, options, label) {
     assert.equal(initial.inWorkspace, false, label + ': el panel de gestión no debe estar dentro del documento desplazable');
     assert.equal(initial.toggle, false, label + ': no debe quedar un segundo acordeón de Gestión de guiones');
     assert.equal(initial.menuClosed, true, label + ': el menú no debe ocupar espacio mientras está cerrado');
-    assert.equal(initial.panelBeforeCard, true, label + ': la administración debe aparecer dentro del menú antes de los datos del proyecto');
+    assert.equal(initial.panelIsFirstNavChild, true, label + ': la gestión debe ser el primer grupo dentro del área desplazable del menú hamburguesa');
+    assert.equal(initial.navScrollsForDrawer, true, label + ': el menú lateral debe proporcionar un único scroll vertical para todas las opciones');
     assert.equal(initial.newScriptInside, true, label + ': Nuevo proyecto conserva su botón original');
     assert.equal(initial.allExistingActionsInside, true, label + ': todas las opciones de gestión existentes deben trasladarse, no duplicarse');
     assert.equal(initial.customToolbarInPane, true, label + ': la barra de formatos queda bajo la cabecera y fuera del scroll de páginas');
@@ -213,7 +217,8 @@ async function mobileMenuAndKeyboard(browser, options, label) {
     await page.waitForFunction(() => document.getElementById('guioneroStructureModal')?.hidden === false);
     await page.locator('#guioneroStructureModal [data-close-structure]').click();
     await page.waitForFunction(() => document.getElementById('guioneroStructureModal')?.hidden === true);
-    await dock.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    const drawerScroll = page.locator('#sidebar .nav-scroll');
+    await drawerScroll.evaluate(el => { el.scrollTop = el.scrollHeight; });
     await page.locator('#guioneroSettingsBtn').evaluate(el => el.scrollIntoView({block:'nearest',inline:'nearest'}));
     await page.locator('#guioneroSettingsBtn').click();
     await page.waitForFunction(() => document.getElementById('guioneroSettingsModal')?.hidden === false);
@@ -221,9 +226,11 @@ async function mobileMenuAndKeyboard(browser, options, label) {
     await page.waitForFunction(() => document.getElementById('guioneroSettingsModal')?.hidden === true);
 
     // Saving remains operational from inside the drawer.
+    await page.locator('#projectSaveBtn').scrollIntoViewIfNeeded();
     await page.locator('#projectSaveBtn').click();
     await page.waitForFunction(() => document.getElementById('toast')?.textContent.includes('Proyecto guardado correctamente'));
     const downloadPromise = page.waitForEvent('download');
+    await page.locator('#projectSaveAsBtn').scrollIntoViewIfNeeded();
     await page.locator('#projectSaveAsBtn').click();
     const download = await downloadPromise;
     assert.match(download.suggestedFilename(), /\.guionero$/i, label + ': Guardar como debe exportar el proyecto Guionero');
@@ -232,6 +239,7 @@ async function mobileMenuAndKeyboard(browser, options, label) {
 
     // Import reuses the same file control and native import path; it must be reachable from the drawer.
     const chooserPromise = page.waitForEvent('filechooser');
+    await page.locator('#projectImportBtn').scrollIntoViewIfNeeded();
     await page.locator('#projectImportBtn').click();
     const chooser = await chooserPromise;
     await chooser.setFiles(exportedPath);
@@ -287,6 +295,7 @@ async function mobileMenuAndKeyboard(browser, options, label) {
 
     // New project remains the same real creation flow and still closes the drawer after completion.
     await page.locator('#sidebar').evaluate(el=>el.classList.add('open'));
+    await page.locator('#newScriptBtn').scrollIntoViewIfNeeded();
     await page.locator('#newScriptBtn').click();
     await page.waitForSelector('.guionero-project-dialog-actions button.primary', { state:'visible' });
     const dialogTitle = await page.locator('#guionero-project-dialog-title').innerText();
