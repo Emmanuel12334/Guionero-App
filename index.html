@@ -24,8 +24,7 @@
       removeItem:function(k){delete values[String(k)];},
       clear:function(){values=Object.create(null);}
     };
-    try { Object.defineProperty(window,'window.__guioneroSafeStorage',{configurable:true,value:store}); }
-    catch(overrideError) { window.__guioneroMemoryStorage=store; }
+    window.__guioneroMemoryStorage=store;
     window.__guioneroSafeStorage=store;
   }
   window.__guioneroStorageFallback=fallback;
@@ -2499,7 +2498,7 @@ async function activateProjectInMemory(project,id){
  window.__guioneroProjectSwitchInProgress=true;
  try{
   window.GuioneroStudio.importState(normalized.studio,{notifyCloud:false});
-  if(window.localStorage.getItem(ACTIVE_KEY)!==normalized.id)throw new Error('El identificador del proyecto activo no coincide con el proyecto que se está cargando.');
+  if(window.__guioneroSafeStorage.getItem(ACTIVE_KEY)!==normalized.id)throw new Error('El identificador del proyecto activo no coincide con el proyecto que se está cargando.');
   window.GuioneroScriptProjectAPI?.syncAfterProjectSwitch(normalized.localState||{},normalized.title,normalized.theme);
   await flushStudioPersistence();
   dirty=false;lastSuccessfulSaveAt=Date.now();window.GuioneroSetSaveIndicator?.('saved','Guardado');await refreshLibrary();renderSelect(normalized.id);status('Proyecto activo: '+(normalized.title||'Guion'));
