@@ -35,7 +35,7 @@
       body.guionero-mobile-device #projectManagementDock #projectLibraryStatus {
         display:block; white-space:normal;
       }
-      body.guionero-mobile-device #paneScript {
+      body.guionero-mobile-device #paneScript.active {
         display:flex; flex:1 1 auto; flex-direction:column;
         min-width:0; min-height:0; overflow:hidden;
       }
