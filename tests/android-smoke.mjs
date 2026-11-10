@@ -84,7 +84,8 @@ try {
   const downloadPromise=page.waitForEvent('download');
   await page.locator('#projectSaveAsBtn').tap();
   const projectDownload=await downloadPromise;
-  assert.match(projectDownload.suggestedFilename(),/\\.guionero$/i,'Guardar como must export a native Guionero project');
+  const exportedName=projectDownload.suggestedFilename();
+  assert.ok(exportedName.toLowerCase().endsWith('.guionero'),'Guardar como must export a native Guionero project: '+exportedName);
   assert.equal(await sidebar.evaluate(el=>el.classList.contains('open')),false,'Save as should close the drawer');
 
   // Browse/open files uses the original native file picker.
