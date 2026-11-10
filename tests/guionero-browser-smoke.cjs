@@ -310,6 +310,65 @@ async function runContext(browser, options, label, useTouch) {
   }
 }
 
+
+async function testStorageFallback(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+  await context.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() { throw new DOMException('Storage access blocked for regression test', 'SecurityError'); }
+    });
+  });
+  const page = await context.newPage();
+  const runtimeErrors = [];
+  page.on('pageerror', error => runtimeErrors.push(error.message));
+  try {
+    await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !!window.GuioneroStudio && !!window.__guioneroStorageFallback
+      && document.getElementById('projectLibraryStatus')?.textContent.includes('Biblioteca lista'));
+    const fallback = await page.evaluate(() => ({
+      enabled: window.__guioneroStorageFallback,
+      safeStoreAvailable: !!window.__guioneroSafeStorage?.getItem,
+      memoryStoreAvailable: !!window.__guioneroMemoryStorage?.getItem,
+      sameStore: window.__guioneroSafeStorage === window.__guioneroMemoryStorage,
+      initialProjectId: window.__guioneroSafeStorage?.getItem('guionero_active_project_id')
+    }));
+    assert.equal(fallback.enabled, true, 'Storage fallback: se activa cuando localStorage lanza SecurityError');
+    assert.equal(fallback.safeStoreAvailable, true, 'Storage fallback: el almacén seguro sigue disponible');
+    assert.equal(fallback.memoryStoreAvailable, true, 'Storage fallback: se expone el almacén en memoria');
+    assert.equal(fallback.sameStore, true, 'Storage fallback: ambos alias apuntan al mismo almacén');
+    assert.ok(fallback.initialProjectId, 'Storage fallback: la biblioteca inicializa un proyecto');
+
+    await page.locator('#newScriptBtn').click();
+    await page.getByRole('dialog', { name: 'Crear un nuevo guion' }).getByRole('button', { name: 'Sí, crear nuevo' }).click();
+    await page.waitForFunction(oldId => {
+      const nextId = window.__guioneroSafeStorage?.getItem('guionero_active_project_id');
+      return nextId && nextId !== oldId
+        && document.getElementById('projectLibraryStatus')?.textContent.includes('Nuevo guion creado y listo para escribir');
+    }, fallback.initialProjectId, { timeout: 12000 });
+
+    const result = await page.evaluate(() => {
+      const id = window.__guioneroSafeStorage.getItem('guionero_active_project_id');
+      const select = document.getElementById('savedScriptSelect');
+      return {
+        activeId: id,
+        title: document.getElementById('mainTitle')?.value,
+        firstLineType: document.querySelector('#script .script-line')?.dataset.type,
+        selectedId: select?.value,
+        libraryIds: [...(select?.options || [])].map(option => option.value)
+      };
+    });
+    assert.notEqual(result.activeId, fallback.initialProjectId, 'Storage fallback: activa el proyecto nuevo');
+    assert.equal(result.firstLineType, 'SCENE', 'Storage fallback: el nuevo guion tiene su primera escena editable');
+    assert.equal(result.selectedId, result.activeId, 'Storage fallback: la biblioteca refleja el proyecto activo');
+    assert.ok(result.libraryIds.includes(result.activeId), 'Storage fallback: el proyecto nuevo aparece en la biblioteca');
+    assert.deepEqual(runtimeErrors, [], 'Storage fallback: no hay excepciones de ejecución');
+    console.log('PASS Storage fallback · creación y activación de proyectos con localStorage bloqueado');
+  } finally {
+    await context.close();
+  }
+}
+
 (async () => {
   await new Promise(resolve => server.listen(4173, '127.0.0.1', resolve));
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
@@ -317,6 +376,7 @@ async function runContext(browser, options, label, useTouch) {
     await runContext(browser, { viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 }, 'Escritorio', false);
     const android = devices['Pixel 7'];
     await runContext(browser, android, 'Android', true);
+    await testStorageFallback(browser);
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));
